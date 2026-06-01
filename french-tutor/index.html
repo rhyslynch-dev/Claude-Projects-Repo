@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>French Tutor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      color: #718096;
+      font-size: 0.95rem;
+    }
+
+    .flag {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 100px;
+      color: #2d3748;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: #667eea;
+    }
+
+    textarea::placeholder {
+      color: #a0aec0;
+    }
+
+    button.translate-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button.translate-btn:hover { background: #5a67d8; }
+    button.translate-btn:active { transform: scale(0.99); }
+    button.translate-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    .result {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .result.visible { display: block; }
+
+    .divider {
+      border: none;
+      border-top: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+    }
+
+    .lang-block {
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+    }
+
+    .lang-block.english {
+      background: #f7fafc;
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .lang-block.french {
+      background: #eef0ff;
+      border: 1.5px solid #c3c8f5;
+    }
+
+    .lang-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 8px;
+    }
+
+    .lang-block.english .lang-label { color: #718096; }
+    .lang-block.french .lang-label  { color: #5a67d8; }
+
+    .lang-text {
+      font-size: 1.15rem;
+      color: #2d3748;
+      line-height: 1.6;
+    }
+
+    .lang-block.french .lang-text {
+      color: #3c4391;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .audio-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: #f7f8ff;
+      border-radius: 10px;
+      border: 1px solid #e0e4ff;
+    }
+
+    .audio-bar span {
+      flex: 1;
+      font-size: 0.9rem;
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    button.replay-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.replay-btn:hover { background: #5a67d8; }
+
+    .speaking-dot {
+      width: 8px;
+      height: 8px;
+      background: #48bb78;
+      border-radius: 50%;
+      display: none;
+      animation: pulse 1s infinite;
+    }
+
+    .speaking-dot.active { display: inline-block; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="flag">🇫🇷</div>
+    <h1>French Tutor</h1>
+    <p>Type anything in English and hear it in French</p>
+  </div>
+
+  <textarea id="input" placeholder="e.g. Hi, how are you?"></textarea>
+  <button class="translate-btn" id="translateBtn">Translate &amp; Speak</button>
+
+  <div class="result" id="result">
+    <hr class="divider" />
+
+    <div class="lang-block english">
+      <div class="lang-label">🇬🇧 English</div>
+      <div class="lang-text" id="englishText"></div>
+    </div>
+
+    <div class="lang-block french">
+      <div class="lang-label">🇫🇷 French</div>
+      <div class="lang-text" id="frenchText"></div>
+    </div>
+
+    <div class="audio-bar">
+      <span id="audioStatus">Ready to play</span>
+      <span class="speaking-dot" id="speakingDot"></span>
+      <button class="replay-btn" id="replayBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+        </svg>
+        Replay
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const mockTranslations = {
+    "hi, how are you": "Bonjour, comment allez-vous ?",
+    "hello": "Bonjour",
+    "good morning": "Bonjour",
+    "good evening": "Bonsoir",
+    "good night": "Bonne nuit",
+    "thank you": "Merci",
+    "please": "S'il vous plaît",
+    "yes": "Oui",
+    "no": "Non",
+    "excuse me": "Excusez-moi",
+    "i don't understand": "Je ne comprends pas",
+    "my name is": "Je m'appelle",
+    "what is your name": "Comment vous appelez-vous ?",
+    "where is the bathroom": "Où sont les toilettes ?",
+    "i would like a coffee": "Je voudrais un café",
+    "how much does this cost": "Combien ça coûte ?",
+    "i love you": "Je t'aime",
+    "see you later": "À bientôt",
+    "goodbye": "Au revoir",
+    "i am happy": "Je suis heureux",
+  };
+
+  let currentFrench = "";
+
+  function pickFrenchVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    // Prioritise France French voices over Canadian; never fall to non-French voices
+    const femaleNames = ["Marie", "Aurelie", "Virginie", "Helena", "Amelie"];
+    return femaleNames.map(n => voices.find(v => v.name.includes(n) && v.lang.startsWith("fr"))).find(Boolean)
+      || voices.find(v => v.lang === "fr-FR" && v.localService)
+      || voices.find(v => v.lang === "fr-FR")
+      || voices.find(v => v.lang.startsWith("fr"))
+      || null;
+  }
+
+  // Trigger voice list population early
+  window.speechSynthesis.onvoiceschanged = () => {};
+  window.speechSynthesis.getVoices();
+
+  function mockTranslate(english) {
+    const key = english.toLowerCase().trim().replace(/[.!?]+$/, "").trim();
+    return mockTranslations[key] || "Traduction à venir";
+  }
+
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "fr-FR";
+    utter.rate = 0.78;
+    utter.pitch = 1.1;
+    const frenchVoice = pickFrenchVoice();
+    if (frenchVoice) utter.voice = frenchVoice;
+
+    const dot = document.getElementById("speakingDot");
+    const status = document.getElementById("audioStatus");
+    utter.onstart = () => { dot.classList.add("active"); status.textContent = "Speaking…"; };
+    utter.onend   = () => { dot.classList.remove("active"); status.textContent = "Ready to replay"; };
+    utter.onerror = () => { dot.classList.remove("active"); status.textContent = "Speech error"; };
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  document.getElementById("translateBtn").addEventListener("click", () => {
+    const input = document.getElementById("input").value.trim();
+    if (!input) return;
+
+    const btn = document.getElementById("translateBtn");
+    btn.disabled = true;
+    btn.textContent = "Translating…";
+
+    setTimeout(() => {
+      const french = mockTranslate(input);
+      currentFrench = french;
+      document.getElementById("englishText").textContent = input;
+      document.getElementById("frenchText").textContent = french;
+      document.getElementById("result").classList.add("visible");
+      btn.disabled = false;
+      btn.textContent = "Translate & Speak";
+      speak(french);
+    }, 400);
+  });
+
+  document.getElementById("replayBtn").addEventListener("click", () => {
+    if (currentFrench) speak(currentFrench);
+  });
+
+  document.getElementById("input").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById("translateBtn").click();
+    }
+  });
+</script>
+
+</body>
+</html>
