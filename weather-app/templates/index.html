@@ -21,12 +21,13 @@
       border-radius: 20px;
       padding: 40px;
       width: 100%;
-      max-width: 420px;
+      max-width: 480px;
       text-align: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      overflow: hidden;
     }
     h1 { font-size: 1.8rem; margin-bottom: 24px; letter-spacing: 1px; }
-    form { display: flex; gap: 8px; margin-bottom: 24px; }
+    .search-wrapper { position: relative; display: flex; gap: 8px; margin-bottom: 24px; }
     input {
       flex: 1;
       padding: 12px 16px;
@@ -49,6 +50,28 @@
       transition: background 0.2s;
     }
     button:hover { background: #c73652; }
+    .autocomplete {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 60px;
+      background: #1a1a2e;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+    .autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.95rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.15s;
+    }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover, .autocomplete-item.active { background: rgba(233,69,96,0.3); }
+    .autocomplete-item .country { font-size: 0.8rem; opacity: 0.6; margin-left: 6px; }
     .error { color: #ff6b6b; margin-top: 8px; }
     .weather { margin-top: 8px; }
     .city { font-size: 1.6rem; font-weight: 600; }
@@ -64,14 +87,54 @@
     }
     .detail-label { font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
     .detail-value { font-size: 1.1rem; font-weight: 600; margin-top: 4px; }
+    .forecast {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .forecast-title { font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .forecast-grid { display: flex; justify-content: space-between; gap: 3px; overflow: hidden; }
+    .forecast-day {
+      flex: 1;
+      min-width: 0;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 8px 2px;
+      text-align: center;
+    }
+    .forecast-day .day-name { font-size: 0.6rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0; }
+    .forecast-day .day-icon { font-size: 1.2rem; margin: 4px 0; }
+    .forecast-day .day-high { font-size: 0.8rem; font-weight: 700; }
+    .forecast-day .day-low { font-size: 0.75rem; opacity: 0.5; }
+    .forecast-day .day-rain { font-size: 0.6rem; opacity: 0.6; margin-top: 3px; }
+    .forecast-day { cursor: pointer; transition: background 0.15s, transform 0.15s; }
+    .forecast-day:hover { background: rgba(233,69,96,0.2); transform: translateY(-2px); }
+    .forecast-day.selected { background: rgba(233,69,96,0.35); }
+    .day-detail {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+      animation: fadeIn 0.2s ease;
+    }
+    .day-detail-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; opacity: 0.9; }
+    .day-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .day-detail-item { }
+    .day-detail-label { font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+    .day-detail-value { font-size: 1rem; font-weight: 600; margin-top: 2px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Weather App</h1>
-    <form method="POST">
-      <input type="text" name="city" placeholder="Enter city name..." required>
-      <button type="submit">Search</button>
+    <form method="POST" id="weather-form">
+      <div class="search-wrapper">
+        <input type="text" id="city-input" name="city" placeholder="Enter city name..." autocomplete="off" required>
+        <div class="autocomplete" id="autocomplete"></div>
+        <button type="submit">Search</button>
+      </div>
     </form>
 
     {% if error %}
@@ -94,7 +157,139 @@
           </div>
         </div>
       </div>
+
+      {% if weather.forecast %}
+      <div class="forecast">
+        <div class="forecast-title">7-Day Forecast</div>
+        <div class="forecast-grid">
+          {% for day in weather.forecast %}
+          <div class="forecast-day" onclick="showDetail(this)"
+            data-date="{{ day.date_full }}"
+            data-icon="{{ day.icon }}"
+            data-condition="{{ day.condition }}"
+            data-high="{{ day.high }}"
+            data-low="{{ day.low }}"
+            data-rain="{{ day.rain }}"
+            data-wind="{{ day.wind }}"
+            data-precip="{{ day.precip }}">
+            <div class="day-name">{{ day.day }}</div>
+            <div class="day-icon">{{ day.icon }}</div>
+            <div class="day-high">{{ day.high }}°</div>
+            <div class="day-low">{{ day.low }}°</div>
+            <div class="day-rain">💧{{ day.rain }}%</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div id="day-detail" class="day-detail" style="display:none;"></div>
+      {% endif %}
     {% endif %}
   </div>
+
+  <script>
+    function showDetail(el) {
+      const all = document.querySelectorAll('.forecast-day');
+      const detail = document.getElementById('day-detail');
+      if (el.classList.contains('selected')) {
+        el.classList.remove('selected');
+        detail.style.display = 'none';
+        return;
+      }
+      all.forEach(d => d.classList.remove('selected'));
+      el.classList.add('selected');
+      const d = el.dataset;
+      detail.style.display = 'block';
+      detail.innerHTML = `
+        <div class="day-detail-title">${d.icon} ${d.date} — ${d.condition}</div>
+        <div class="day-detail-grid">
+          <div class="day-detail-item">
+            <div class="day-detail-label">High</div>
+            <div class="day-detail-value">${d.high}°C</div>
+          </div>
+          <div class="day-detail-item">
+            <div class="day-detail-label">Low</div>
+            <div class="day-detail-value">${d.low}°C</div>
+          </div>
+          <div class="day-detail-item">
+            <div class="day-detail-label">Rain Chance</div>
+            <div class="day-detail-value">💧 ${d.rain}%</div>
+          </div>
+          <div class="day-detail-item">
+            <div class="day-detail-label">Precipitation</div>
+            <div class="day-detail-value">🌧 ${d.precip} mm</div>
+          </div>
+          <div class="day-detail-item">
+            <div class="day-detail-label">Max Wind</div>
+            <div class="day-detail-value">💨 ${d.wind} km/h</div>
+          </div>
+        </div>`;
+    }
+
+    const input = document.getElementById('city-input');
+    const dropdown = document.getElementById('autocomplete');
+    let activeIndex = -1;
+    let debounceTimer;
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const query = input.value.trim();
+      if (query.length < 2) { closeDropdown(); return; }
+      debounceTimer = setTimeout(() => fetchSuggestions(query), 250);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        updateActive(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, -1);
+        updateActive(items);
+      } else if (e.key === 'Enter' && activeIndex >= 0) {
+        e.preventDefault();
+        items[activeIndex].click();
+      } else if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrapper')) closeDropdown();
+    });
+
+    async function fetchSuggestions(query) {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5`);
+      const data = await res.json();
+      renderDropdown(data.results || []);
+    }
+
+    function renderDropdown(results) {
+      activeIndex = -1;
+      if (!results.length) { closeDropdown(); return; }
+      dropdown.innerHTML = results.map((r, i) =>
+        `<div class="autocomplete-item" data-name="${r.name}, ${r.country}" data-index="${i}">
+          ${r.name}<span class="country">${r.country}</span>
+        </div>`
+      ).join('');
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          input.value = item.dataset.name;
+          closeDropdown();
+          document.getElementById('weather-form').submit();
+        });
+      });
+    }
+
+    function updateActive(items) {
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+    }
+
+    function closeDropdown() {
+      dropdown.innerHTML = '';
+      activeIndex = -1;
+    }
+  </script>
 </body>
 </html>
