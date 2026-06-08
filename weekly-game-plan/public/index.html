@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Game Plan | Pure Whey ProTEAM</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo">⚡</div>
+      <div class="header-title">
+        <h1>Weekly Game Plan</h1>
+        <span class="team-name">Pure Whey ProTEAM</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="week-label" id="weekLabel">Loading...</div>
+      <button class="btn-history" id="historyBtn">History</button>
+      <button class="btn-new-week" id="newWeekBtn">Start New Week</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="board" id="board"></div>
+  </main>
+
+  <!-- Kudos Modal -->
+  <div class="modal-overlay" id="kudosModal">
+    <div class="modal">
+      <h2>Give Kudos 🙌</h2>
+      <div class="modal-body">
+        <label>From</label>
+        <select id="kudosFrom"></select>
+        <label>To</label>
+        <select id="kudosTo"></select>
+        <label>Message</label>
+        <textarea id="kudosMessage" placeholder="What are you celebrating?" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="kudosCancel">Cancel</button>
+        <button class="btn-send" id="kudosSend">Send Kudos 🎉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal modal-wide">
+      <h2>History 📅</h2>
+      <div class="modal-body" id="historyContent">Loading...</div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="historyClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

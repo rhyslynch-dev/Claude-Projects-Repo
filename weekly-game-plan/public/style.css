@@ -1,0 +1,314 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3248;
+  --text: #e8eaf0;
+  --text-muted: #7a7f9a;
+  --accent: #5b6af0;
+  --accent-hover: #4a58e0;
+  --green: #2ecc71;
+  --orange: #f39c12;
+  --red: #e74c3c;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left { display: flex; align-items: center; gap: 14px; }
+
+.logo {
+  font-size: 28px;
+  width: 44px; height: 44px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.header-title h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.team-name { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.week-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  transition: background 0.15s, transform 0.1s;
+}
+button:active { transform: scale(0.97); }
+
+.btn-history {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-history:hover { color: var(--text); border-color: var(--accent); }
+
+.btn-new-week {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-new-week:hover { background: var(--accent-hover); }
+
+/* ── Board ── */
+main { flex: 1; padding: 24px 20px; overflow-x: auto; }
+
+.board {
+  display: flex;
+  gap: 16px;
+  min-width: max-content;
+}
+
+/* ── Member Card ── */
+.member-card {
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.member-name { font-size: 15px; font-weight: 600; }
+
+.card-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Sections ── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  resize: none;
+  min-height: 68px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,106,240,0.15);
+}
+textarea::placeholder { color: var(--text-muted); }
+
+/* ── Outcome ── */
+.outcome-section { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; }
+
+.last-goal-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  font-style: italic;
+  line-height: 1.4;
+}
+.last-goal-text.empty { opacity: 0.4; }
+
+.outcome-btns { display: flex; gap: 6px; }
+
+.outcome-btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.outcome-btn:hover { border-color: var(--text-muted); color: var(--text); }
+.outcome-btn.active-achieved { background: rgba(46,204,113,0.15); border-color: var(--green); color: var(--green); }
+.outcome-btn.active-partial  { background: rgba(243,156,18,0.15);  border-color: var(--orange); color: var(--orange); }
+.outcome-btn.active-missed   { background: rgba(231,76,60,0.15);   border-color: var(--red);    color: var(--red); }
+
+/* ── Kudos ── */
+.kudos-section { border-top: 1px solid var(--border); padding: 14px 18px; }
+
+.kudos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.btn-give-kudos {
+  padding: 5px 12px;
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 20px;
+}
+.btn-give-kudos:hover { border-color: var(--accent); color: var(--accent); }
+
+.kudos-list { display: flex; flex-direction: column; gap: 8px; }
+
+.kudo-chip {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid var(--accent);
+}
+.kudo-chip .kudo-from { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+
+.kudos-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+/* ── Modals ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 440px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-wide { width: 700px; max-height: 80vh; overflow-y: auto; }
+
+.modal h2 { font-size: 18px; margin-bottom: 20px; }
+
+.modal-body { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.modal-body label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.modal-body select, .modal-body textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+.modal-body select { min-height: 40px; }
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+.btn-cancel { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.btn-cancel:hover { color: var(--text); }
+.btn-send { background: var(--accent); color: #fff; }
+.btn-send:hover { background: var(--accent-hover); }
+
+/* ── History ── */
+.history-week { margin-bottom: 24px; }
+.history-week h3 { font-size: 14px; color: var(--accent); margin-bottom: 12px; }
+
+.history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+
+.history-member-card {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+.history-member-card .h-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.history-member-card .h-goal { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 6px; }
+.history-member-card .h-status {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 10px; display: inline-block;
+}
+.h-status.achieved { background: rgba(46,204,113,0.15); color: var(--green); }
+.h-status.partial  { background: rgba(243,156,18,0.15);  color: var(--orange); }
+.h-status.missed   { background: rgba(231,76,60,0.15);   color: var(--red); }
+.h-status.pending  { background: var(--surface); color: var(--text-muted); }
+
+/* ── Live indicator ── */
+.live-dot {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Typing indicator ── */
+textarea.peer-typing { border-color: var(--accent); }
