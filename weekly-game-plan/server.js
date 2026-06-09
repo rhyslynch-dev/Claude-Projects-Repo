@@ -102,10 +102,26 @@ io.on('connection', (socket) => {
     if (!message?.trim()) return;
     const data = loadData();
     if (!data.weeks[weekKey]) return;
-    const kudo = { id: Date.now(), from, to, message: message.trim(), timestamp: new Date().toISOString() };
+    const kudo = { id: Date.now(), from, to, message: message.trim(), timestamp: new Date().toISOString(), upvotes: [] };
     data.weeks[weekKey].kudos.push(kudo);
     saveData(data);
     io.to(weekKey).emit('kudos-added', kudo);
+  });
+
+  socket.on('upvote-kudos', ({ weekKey, kudoId, memberId }) => {
+    const data = loadData();
+    if (!data.weeks[weekKey]) return;
+    const kudo = data.weeks[weekKey].kudos.find(k => k.id === kudoId);
+    if (!kudo) return;
+    if (!kudo.upvotes) kudo.upvotes = [];
+    const idx = kudo.upvotes.indexOf(memberId);
+    if (idx === -1) {
+      kudo.upvotes.push(memberId);
+    } else {
+      kudo.upvotes.splice(idx, 1); // toggle off
+    }
+    saveData(data);
+    io.to(weekKey).emit('kudos-upvoted', { kudoId, upvotes: kudo.upvotes });
   });
 
   socket.on('start-new-week', () => {

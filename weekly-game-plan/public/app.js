@@ -71,7 +71,7 @@ function buildCard(m, mData, kudos) {
   body.appendChild(buildField('GOAL OF THE WEEK', 'goal', m.id, mData.goal || '', 'What is your key goal this week?'));
 
   // To achieve
-  body.appendChild(buildField('TO ACHIEVE THIS I NEED', 'toAchieve', m.id, mData.toAchieve || '', 'What do you need to make it happen?'));
+  body.appendChild(buildField('ANCHORS THAT MAY SLOW ME DOWN', 'toAchieve', m.id, mData.toAchieve || '', 'What may stop you from achieving this?'));
 
   // Last week reflection
   body.appendChild(buildOutcomeSection(m.id, mData));
@@ -193,14 +193,35 @@ function renderKudo(list, kudo) {
   if (empty) empty.remove();
 
   const fromMember = getMember(kudo.from);
+  const upvotes = kudo.upvotes || [];
   const chip = document.createElement('div');
   chip.className = 'kudo-chip';
   chip.dataset.kudoId = kudo.id;
   chip.innerHTML = `
-    <div>"${kudo.message}"</div>
-    <div class="kudo-from">— ${fromMember ? fromMember.name : kudo.from}</div>
+    <div class="kudo-message">"${kudo.message}"</div>
+    <div class="kudo-footer">
+      <div class="kudo-from">— ${fromMember ? fromMember.name : kudo.from}</div>
+      <button class="btn-upvote" data-kudo-id="${kudo.id}">
+        🥳 <span class="upvote-count">${upvotes.length > 0 ? upvotes.length : ''}</span>
+      </button>
+    </div>
   `;
+
+  chip.querySelector('.btn-upvote').addEventListener('click', () => {
+    socket.emit('upvote-kudos', {
+      weekKey: currentWeekKey,
+      kudoId: kudo.id,
+      memberId: 'anon',
+    });
+  });
+
   list.appendChild(chip);
+}
+
+function patchUpvote(kudoId, upvotes) {
+  const btn = document.querySelector(`.btn-upvote[data-kudo-id="${kudoId}"]`);
+  if (!btn) return;
+  btn.querySelector('.upvote-count').textContent = upvotes.length > 0 ? upvotes.length : '';
 }
 
 // ── Patch updates (no full re-render) ────────────────────────────────────────
@@ -399,6 +420,10 @@ socket.on('field-updated', ({ memberId, field, value }) => {
 
 socket.on('kudos-added', (kudo) => {
   patchKudo(kudo);
+});
+
+socket.on('kudos-upvoted', ({ kudoId, upvotes }) => {
+  patchUpvote(kudoId, upvotes);
 });
 
 socket.on('week-changed', ({ weekKey, week }) => {
