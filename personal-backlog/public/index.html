@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Backlog | Rhys Lynch</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo"><img src="/images/bulk-logo.png" alt="Bulk" /></div>
+      <div class="header-title">
+        <h1>Personal Backlog</h1>
+        <span class="subtitle">Rhys Lynch</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-label" id="dateLabel"></div>
+      <button class="btn-add-task" id="addTaskBtn">+ Add Task</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+
+      <!-- Task Board -->
+      <div class="task-board" id="taskBoard"></div>
+
+      <!-- Habits Panel -->
+      <div class="habits-panel">
+        <div class="habits-header">
+          <div class="panel-title">Daily Habits 🔥</div>
+          <button class="btn-add-habit" id="addHabitBtn">+ Add</button>
+        </div>
+        <div class="habits-list" id="habitsList"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add Task Modal -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal">
+      <h2 id="taskModalTitle">Add Task</h2>
+      <div class="modal-body">
+        <label>Task</label>
+        <input type="text" id="taskName" placeholder="What needs to get done?" maxlength="150" />
+        <label>Section</label>
+        <select id="taskSection">
+          <option value="today">Today</option>
+          <option value="thisWeek">This Week</option>
+          <option value="thisMonth">This Month</option>
+          <option value="backlog">Backlog</option>
+        </select>
+        <label>Priority</label>
+        <div class="priority-toggle">
+          <button class="priority-btn active" data-priority="A">A — Must Do</button>
+          <button class="priority-btn" data-priority="B">B — Should Do</button>
+        </div>
+        <label>Due Date <span class="optional">(optional)</span></label>
+        <input type="text" id="taskDueDate" placeholder="Select a date..." readonly />
+        <label>Notes <span class="optional">(optional)</span></label>
+        <textarea id="taskNotes" placeholder="Anything relevant to this task..." rows="3" maxlength="150"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="taskCancel">Cancel</button>
+        <button class="btn-save" id="taskSave">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Habit Modal -->
+  <div class="modal-overlay" id="habitModal">
+    <div class="modal">
+      <h2>Add Habit</h2>
+      <div class="modal-body">
+        <label>Habit Name</label>
+        <input type="text" id="habitName" placeholder="e.g. Daily Exercise" />
+        <label>Emoji</label>
+        <input type="text" id="habitEmoji" placeholder="e.g. 💪" maxlength="2" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="habitCancel">Cancel</button>
+        <button class="btn-save" id="habitSave">Add Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
