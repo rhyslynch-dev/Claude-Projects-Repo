@@ -3,6 +3,21 @@ const http = require('http');
 const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
+// Load .env
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+  fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(line => {
+    const [key, val] = line.split('=');
+    if (key && val) process.env[key.trim()] = val.trim();
+  });
+}
+
+const HIBOB_SERVICE_ID = process.env.HIBOB_SERVICE_ID;
+const HIBOB_TOKEN = process.env.HIBOB_TOKEN;
+const HIBOB_AUTH = Buffer.from(`${HIBOB_SERVICE_ID}:${HIBOB_TOKEN}`).toString('base64');
 
 const app = express();
 const server = http.createServer(app);
@@ -68,6 +83,89 @@ function getOrCreateWeek(weekKey) {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── HiBob Leave API ───────────────────────────────────────────────────────────
+
+function hibobRequest(urlStr) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlStr);
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${HIBOB_AUTH}`,
+        'Accept': 'application/json',
+      },
+      rejectUnauthorized: false,
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); }
+        catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function fetchAllLeave() {
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+  const sinceStr = since.toISOString().replace(/\.\d+Z$/, '+00:00');
+  const url = `https://api.hibob.com/v1/timeoff/requests/changes?since=${encodeURIComponent(sinceStr)}`;
+  const data = await hibobRequest(url);
+  return (data.changes || []).filter(c => c.changeType !== 'Deleted' && c.status !== 'declined');
+}
+
+function filterLeaveByRange(changes, from, to) {
+  return changes.filter(c => c.startDate <= to && c.endDate >= from);
+}
+
+function getWeekRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day + (day === 0 ? -6 : 1));
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  return {
+    from: monday.toISOString().split('T')[0],
+    to: friday.toISOString().split('T')[0],
+  };
+}
+
+function getMonthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0],
+  };
+}
+
+app.get('/api/leave', async (req, res) => {
+  try {
+    const week = getWeekRange();
+    const month = getMonthRange();
+
+    const allLeave = await fetchAllLeave();
+
+    const thisWeek  = filterLeaveByRange(allLeave, week.from, week.to);
+    const thisWeekIds = new Set(thisWeek.map(l => l.requestId));
+    const thisMonth = filterLeaveByRange(allLeave, month.from, month.to)
+      .filter(l => !thisWeekIds.has(l.requestId));
+
+    res.json({ thisWeek, thisMonth, weekRange: week, monthRange: month });
+  } catch (err) {
+    console.error('HiBob error:', err);
+    res.status(500).json({ error: 'Failed to fetch leave data' });
+  }
+});
 
 app.get('/api/members', (req, res) => res.json(MEMBERS));
 

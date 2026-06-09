@@ -108,14 +108,75 @@ button:active { transform: scale(0.97); }
 }
 .btn-new-week:hover { background: var(--accent-hover); }
 
-/* ── Board ── */
+/* ── Layout ── */
 main { flex: 1; padding: 24px 20px; overflow-x: auto; }
 
+.layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  min-width: max-content;
+}
+
+/* ── Board ── */
 .board {
   display: flex;
   gap: 20px;
   min-width: max-content;
 }
+
+/* ── Leave Panel ── */
+.leave-panel {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.leave-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.leave-title { font-size: 14px; font-weight: 700; }
+
+.leave-refresh {
+  font-size: 16px; cursor: pointer; color: var(--text-muted);
+  transition: transform 0.3s, color 0.15s;
+  user-select: none;
+}
+.leave-refresh:hover { color: var(--text); transform: rotate(180deg); }
+
+.leave-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.leave-section:last-child { border-bottom: none; }
+
+.leave-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.leave-list { display: flex; flex-direction: column; gap: 8px; }
+
+.leave-chip {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+}
+.leave-chip .leave-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.leave-chip .leave-dates { font-size: 11px; color: var(--text-muted); }
+
+.leave-all-in {
+  font-size: 12px; color: var(--green);
+  font-style: italic;
+}
+
+.leave-loading { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.leave-error { font-size: 12px; color: var(--red); font-style: italic; }
 
 /* ── Member Card ── */
 .member-card {

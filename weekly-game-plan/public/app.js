@@ -433,6 +433,47 @@ socket.on('week-changed', ({ weekKey, week }) => {
   buildBoard(week);
 });
 
+// ── Leave Panel ───────────────────────────────────────────────────────────────
+
+function formatLeaveDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function renderLeaveList(containerId, outs, emptyMsg) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!outs || outs.length === 0) {
+    el.innerHTML = `<div class="leave-all-in">${emptyMsg}</div>`;
+    return;
+  }
+  el.innerHTML = outs.map(out => `
+    <div class="leave-chip">
+      <div class="leave-name">${out.employeeDisplayName || out.employeeId}</div>
+      <div class="leave-dates">${formatLeaveDate(out.startDate)} – ${formatLeaveDate(out.endDate)}</div>
+    </div>
+  `).join('');
+}
+
+async function loadLeave() {
+  try {
+    const res = await fetch('/api/leave');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderLeaveList('leaveThisWeek', data.thisWeek, '✅ All team in this week');
+    renderLeaveList('leaveThisMonth', data.thisMonth, '✅ No upcoming leave');
+  } catch (err) {
+    document.getElementById('leaveThisWeek').innerHTML = '<div class="leave-error">Failed to load</div>';
+    document.getElementById('leaveThisMonth').innerHTML = '<div class="leave-error">Failed to load</div>';
+  }
+}
+
+document.getElementById('leaveRefresh').addEventListener('click', () => {
+  document.getElementById('leaveThisWeek').innerHTML = '<div class="leave-loading">Loading...</div>';
+  document.getElementById('leaveThisMonth').innerHTML = '<div class="leave-loading">Loading...</div>';
+  loadLeave();
+});
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -444,6 +485,10 @@ async function init() {
     `<span class="live-dot"></span>${formatWeekLabel(currentWeekKey)}`;
 
   socket.emit('join-week', currentWeekKey);
+
+  loadLeave();
+  // Refresh leave data every 30 mins
+  setInterval(loadLeave, 30 * 60 * 1000);
 }
 
 init();

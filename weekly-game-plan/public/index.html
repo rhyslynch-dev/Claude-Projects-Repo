@@ -25,7 +25,23 @@
   </header>
 
   <main>
-    <div class="board" id="board"></div>
+    <div class="layout">
+      <div class="board" id="board"></div>
+      <div class="leave-panel" id="leavePanel">
+        <div class="leave-header">
+          <span class="leave-title">Team Leave 🏖️</span>
+          <span class="leave-refresh" id="leaveRefresh" title="Refresh">↻</span>
+        </div>
+        <div class="leave-section">
+          <div class="leave-section-label">THIS WEEK</div>
+          <div class="leave-list" id="leaveThisWeek"><div class="leave-loading">Loading...</div></div>
+        </div>
+        <div class="leave-section">
+          <div class="leave-section-label">REST OF MONTH</div>
+          <div class="leave-list" id="leaveThisMonth"><div class="leave-loading">Loading...</div></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- Kudos Modal -->
