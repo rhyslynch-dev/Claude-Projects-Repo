@@ -1,3 +1,12 @@
+function toggleCollapse(id) {
+  const body = document.getElementById(id);
+  const chevron = document.getElementById(`chevron-${id}`);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.textContent = isOpen ? '▸' : '▾';
+}
+
 const socket = io();
 
 let members = [];
@@ -47,7 +56,9 @@ function buildCard(m, mData, kudos) {
   const header = document.createElement('div');
   header.className = 'card-header';
   header.innerHTML = `
-    <div class="avatar" style="background:${m.color}">${m.initials}</div>
+    <div class="avatar" style="background:${m.color}">
+      ${m.photo ? `<img src="${m.photo}" alt="${m.name}" />` : m.initials}
+    </div>
     <div class="member-name">${m.name}</div>
   `;
   card.appendChild(header);
@@ -113,7 +124,7 @@ function buildOutcomeSection(memberId, mData) {
   const label = document.createElement('div');
   label.className = 'section-label';
   label.style.marginBottom = '8px';
-  label.textContent = 'LAST WEEK OUTCOME';
+  label.textContent = "LAST WEEK'S OUTCOME";
   wrap.insertBefore(label, goalText);
 
   const btns = document.createElement('div');
@@ -267,29 +278,94 @@ document.getElementById('historyBtn').addEventListener('click', async () => {
     return;
   }
 
-  content.innerHTML = history.map(({ weekKey, week }) => {
-    const memberCards = members.map(m => {
-      const mData = week.members[m.id] || {};
-      const statusClass = mData.outcomeStatus || 'pending';
-      const statusLabel = mData.outcomeStatus
-        ? mData.outcomeStatus.charAt(0).toUpperCase() + mData.outcomeStatus.slice(1)
-        : 'Pending';
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Group weeks by year → month
+  const grouped = {};
+  for (const { weekKey, week } of history) {
+    const [y, m] = weekKey.split('-').map(Number);
+    const monthIndex = m - 1;
+    if (!grouped[y]) grouped[y] = {};
+    if (!grouped[y][monthIndex]) grouped[y][monthIndex] = [];
+    grouped[y][monthIndex].push({ weekKey, week });
+  }
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const yearsHtml = Object.keys(grouped).sort((a,b) => b - a).map(year => {
+    const isCurrentYear = parseInt(year) === currentYear;
+
+    const monthsHtml = Object.keys(grouped[year]).sort((a,b) => b - a).map(monthIndex => {
+      const isCurrentMonth = isCurrentYear && parseInt(monthIndex) === currentMonth;
+      const monthId = `month-${year}-${monthIndex}`;
+
+      const weeksHtml = grouped[year][monthIndex].map(({ weekKey, week }) => {
+        const memberCards = members.map(m => {
+          const mData = week.members[m.id] || {};
+          const statusClass = mData.outcomeStatus || 'pending';
+          const statusLabel = mData.outcomeStatus
+            ? mData.outcomeStatus.charAt(0).toUpperCase() + mData.outcomeStatus.slice(1)
+            : 'Pending';
+          return `
+            <div class="history-member-card">
+              <div class="h-name">${m.name}</div>
+              <div class="h-goal">${mData.goal || '<em>No goal set</em>'}</div>
+              <span class="h-status ${statusClass}">${statusLabel}</span>
+            </div>
+          `;
+        }).join('');
+
+        const kudos = week.kudos || [];
+        const kudosHtml = kudos.length === 0
+          ? '<p class="kudos-empty">No kudos this week</p>'
+          : kudos.map(k => {
+              const fromName = members.find(m => m.id === k.from)?.name || k.from;
+              const toName   = members.find(m => m.id === k.to)?.name   || k.to;
+              return `<div class="h-kudo-chip">🙌 <strong>${fromName}</strong> → <strong>${toName}</strong>: "${k.message}"</div>`;
+            }).join('');
+
+        return `
+          <div class="history-week">
+            <h3>${formatWeekLabel(weekKey)}</h3>
+            <div class="history-grid">${memberCards}</div>
+            <div class="h-kudos-section">
+              <div class="h-kudos-label">KUDOS</div>
+              <div class="h-kudos-list">${kudosHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
       return `
-        <div class="history-member-card">
-          <div class="h-name">${m.name}</div>
-          <div class="h-goal">${mData.goal || '<em>No goal set</em>'}</div>
-          <span class="h-status ${statusClass}">${statusLabel}</span>
+        <div class="h-month">
+          <div class="h-month-header" onclick="toggleCollapse('${monthId}')">
+            <span>${monthNames[monthIndex]}</span>
+            <span class="h-chevron" id="chevron-${monthId}">${isCurrentMonth ? '▾' : '▸'}</span>
+          </div>
+          <div class="h-month-body" id="${monthId}" style="display:${isCurrentMonth ? 'block' : 'none'}">
+            ${weeksHtml}
+          </div>
         </div>
       `;
     }).join('');
 
+    const yearId = `year-${year}`;
     return `
-      <div class="history-week">
-        <h3>${formatWeekLabel(weekKey)}</h3>
-        <div class="history-grid">${memberCards}</div>
+      <div class="h-year">
+        <div class="h-year-header" onclick="toggleCollapse('${yearId}')">
+          <span>${year}</span>
+          <span class="h-chevron" id="chevron-${yearId}">${isCurrentYear ? '▾' : '▸'}</span>
+        </div>
+        <div class="h-year-body" id="${yearId}" style="display:${isCurrentYear ? 'block' : 'none'}">
+          ${monthsHtml}
+        </div>
       </div>
     `;
   }).join('');
+
+  content.innerHTML = yearsHtml;
 });
 
 document.getElementById('historyClose').addEventListener('click', () => {

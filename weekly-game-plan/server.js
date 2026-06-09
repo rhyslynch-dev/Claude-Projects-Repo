@@ -12,11 +12,11 @@ const DATA_FILE = path.join(__dirname, 'data', 'weeks.json');
 const PORT = process.env.PORT || 3000;
 
 const MEMBERS = [
-  { id: 'rhys',   name: 'Rhys Lynch',     initials: 'RL', color: '#4F86C6' },
-  { id: 'nate',   name: 'Nate Smithen',   initials: 'NS', color: '#E07BB5' },
-  { id: 'david',  name: 'David Rossiter', initials: 'DR', color: '#9B59B6' },
-  { id: 'rowena', name: 'Rowena Ramsay',  initials: 'RR', color: '#E67E22' },
-  { id: 'arslan', name: 'Arslan Nasir',   initials: 'AN', color: '#27AE60' },
+  { id: 'rhys',   name: 'Rhys Lynch',     initials: 'RL', color: '#4F86C6', photo: '/images/Rhys.png'   },
+  { id: 'nate',   name: 'Nate Smithen',   initials: 'NS', color: '#E07BB5', photo: '/images/Nate.png'   },
+  { id: 'david',  name: 'David Rossiter', initials: 'DR', color: '#9B59B6', photo: '/images/David.png'  },
+  { id: 'rowena', name: 'Rowena Ramsay',  initials: 'RR', color: '#E67E22', photo: '/images/Row.png'    },
+  { id: 'arslan', name: 'Arslan Nasir',   initials: 'AN', color: '#27AE60', photo: '/images/Arslan.jpg' },
 ];
 
 function loadData() {
@@ -109,9 +109,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('start-new-week', () => {
+    const data = loadData();
     const weekKey = getWeekKey();
-    const week = getOrCreateWeek(weekKey);
-    io.emit('week-changed', { weekKey, week });
+
+    // Find the most recent completed week to carry goals forward
+    const keys = Object.keys(data.weeks).sort();
+    const prevKey = keys.filter(k => k !== weekKey).pop();
+    const prevWeek = prevKey ? data.weeks[prevKey] : null;
+
+    // Always create a fresh week — clear all fields, carry last week's goals
+    const members = {};
+    for (const m of MEMBERS) {
+      const lastGoal = prevWeek ? (prevWeek.members[m.id]?.goal || '') : '';
+      members[m.id] = {
+        goal: '',
+        toAchieve: '',
+        lastWeekGoal: lastGoal,
+        outcomeStatus: null,
+      };
+    }
+    data.weeks[weekKey] = { weekKey, members, kudos: [] };
+    saveData(data);
+
+    io.emit('week-changed', { weekKey, week: data.weeks[weekKey] });
   });
 });
 
