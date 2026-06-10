@@ -103,6 +103,11 @@ main { flex: 1; padding: 24px 20px; }
   align-items: flex-start;
 }
 
+.right-column {
+  display: flex; flex-direction: column; gap: 20px;
+  width: 340px; flex-shrink: 0;
+}
+
 /* ── Task Board ── */
 .task-board { flex: 1; max-width: 780px; display: flex; flex-direction: column; gap: 16px; }
 
@@ -187,9 +192,10 @@ main { flex: 1; padding: 24px 20px; }
   font-size: 11px; color: #888888;
   white-space: nowrap;
 }
-.task-due.overdue { color: var(--red); }
-.task-due.today { color: var(--green); }
-.task-due.soon { color: var(--orange); }
+.task-due.overdue  { color: var(--red); }
+.task-due.today    { color: var(--green); }
+.task-due.soon     { color: var(--orange); }
+.task-due.distant  { color: #888888; }
 
 .priority-badge {
   font-size: 11px; font-weight: 700;
@@ -244,7 +250,7 @@ main { flex: 1; padding: 24px 20px; }
 
 /* ── Habits Panel ── */
 .habits-panel {
-  width: 300px; flex-shrink: 0;
+  width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -270,41 +276,100 @@ main { flex: 1; padding: 24px 20px; }
 
 /* ── Habit Card ── */
 .habit-card {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   transition: background 0.1s;
 }
 .habit-card:last-child { border-bottom: none; }
 .habit-card:hover { background: var(--surface2); }
 
 .habit-toggle {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 38px; height: 38px; border-radius: 50%;
   border: 2px solid var(--border);
   background: transparent; cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; transition: all 0.15s; padding: 0;
+  font-size: 18px; transition: all 0.15s; padding: 0;
 }
 .habit-toggle:hover { border-color: var(--green); transform: scale(1.1); }
 .habit-toggle.done { border-color: var(--green); background: rgba(46,204,113,0.15); }
 
 .habit-info { flex: 1; }
-.habit-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
-.habit-stats { display: flex; gap: 10px; }
-.habit-streak { font-size: 11px; color: var(--orange); font-weight: 600; }
-.habit-best { font-size: 11px; color: var(--text-muted); }
+.habit-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.habit-stats {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: nowrap;
+}
+.habit-streak { font-size: 11px; color: var(--orange); font-weight: 600; white-space: nowrap; }
+.habit-best { font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+.habit-schedule {
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  background: rgba(14,70,174,0.15); border: 1px solid rgba(14,70,174,0.3);
+  padding: 1px 6px; border-radius: 8px;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.habit-actions { display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.habit-card:hover .habit-actions { opacity: 1; }
+
+.habit-edit {
+  background: transparent; color: var(--text-muted);
+  font-size: 13px; padding: 2px 6px; border-radius: 4px;
+}
+.habit-edit:hover { background: var(--surface); color: var(--text); }
 
 .habit-delete {
-  opacity: 0; background: transparent; color: var(--red);
+  background: transparent; color: var(--red);
   font-size: 16px; padding: 2px 6px; border-radius: 4px;
-  transition: opacity 0.15s;
 }
-.habit-card:hover .habit-delete { opacity: 1; }
+.habit-delete:hover { background: rgba(228,40,40,0.1); }
 
 .habits-empty {
   padding: 20px 18px;
   font-size: 13px; color: var(--text-muted); font-style: italic; text-align: center;
 }
+
+/* ── Leave Panel ── */
+.leave-panel {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.leave-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-refresh-leave {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: 50%;
+  width: 28px; height: 28px; font-size: 14px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-refresh-leave:hover { border-color: var(--accent); color: var(--accent); }
+
+.leave-section { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+.leave-section:last-child { border-bottom: none; }
+
+.leave-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+}
+
+.leave-entry {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.leave-entry:last-child { border-bottom: none; }
+.leave-name { font-size: 13px; font-weight: 600; }
+.leave-dates { font-size: 11px; color: var(--text-muted); }
+.leave-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.leave-loading { font-size: 12px; color: var(--text-muted); }
 
 /* ── Modals ── */
 .modal-overlay {
@@ -348,6 +413,16 @@ main { flex: 1; padding: 24px 20px; }
   box-shadow: 0 0 0 3px rgba(14,70,174,0.15);
 }
 
+/* Schedule toggle */
+.schedule-toggle { display: flex; gap: 8px; }
+.schedule-btn {
+  flex: 1; padding: 10px; border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--text-muted);
+  border: 1px solid var(--border); font-size: 13px;
+}
+.schedule-btn.active { background: rgba(14,70,174,0.2); border-color: var(--accent); color: #6b9eff; }
+.schedule-btn:hover { border-color: var(--accent); }
+
 /* Priority toggle */
 .priority-toggle { display: flex; gap: 8px; }
 .priority-btn {
@@ -362,6 +437,23 @@ main { flex: 1; padding: 24px 20px; }
   background: rgba(107,158,255,0.15); border-color: #6b9eff; color: #6b9eff;
 }
 .priority-btn:hover { border-color: var(--accent); }
+
+/* ── Emoji picker ── */
+.emoji-picker {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px;
+  max-height: 200px; overflow-y: auto;
+}
+.emoji-option {
+  width: 36px; height: 36px; border-radius: 8px;
+  font-size: 18px; background: transparent;
+  border: 2px solid transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.1s; padding: 0;
+}
+.emoji-option:hover { background: var(--surface); border-color: var(--border); }
+.emoji-option.selected { background: var(--surface); border-color: var(--accent); }
 
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .btn-cancel { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }

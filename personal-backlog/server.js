@@ -1,6 +1,20 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+
+// Load .env
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+  fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(line => {
+    const [key, val] = line.split('=');
+    if (key && val) process.env[key.trim()] = val.trim();
+  });
+}
+
+const HIBOB_SERVICE_ID = process.env.HIBOB_SERVICE_ID;
+const HIBOB_TOKEN = process.env.HIBOB_TOKEN;
+const HIBOB_AUTH = Buffer.from(`${HIBOB_SERVICE_ID}:${HIBOB_TOKEN}`).toString('base64');
+const MY_EMAIL = 'rhys.lynch@bulk.com';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -110,12 +124,25 @@ app.post('/api/habits', (req, res) => {
     id: Date.now(),
     name: name.trim(),
     emoji: emoji || '✅',
+    weekdaysOnly: req.body.weekdaysOnly || false,
     streak: 0,
     bestStreak: 0,
     completedDates: [],
     createdAt: new Date().toISOString(),
   };
   data.habits.push(habit);
+  saveData(data);
+  res.json(habit);
+});
+
+app.patch('/api/habits/:id', (req, res) => {
+  const data = loadData();
+  const habit = data.habits.find(h => h.id === parseInt(req.params.id));
+  if (!habit) return res.status(404).json({ error: 'Not found' });
+  const { name, emoji, weekdaysOnly } = req.body;
+  if (name !== undefined) habit.name = name;
+  if (emoji !== undefined) habit.emoji = emoji;
+  if (weekdaysOnly !== undefined) habit.weekdaysOnly = weekdaysOnly;
   saveData(data);
   res.json(habit);
 });
@@ -135,15 +162,24 @@ app.patch('/api/habits/:id/toggle', (req, res) => {
   }
 
   // Recalculate streak
-  const dates = [...habit.completedDates].sort();
+  const dates = new Set(habit.completedDates);
+  const weekdaysOnly = habit.weekdaysOnly || false;
   let streak = 0;
-  let check = today;
-  while (dates.includes(check)) {
+  let check = new Date(today + 'T00:00:00');
+
+  while (true) {
+    const dayOfWeek = check.getDay();
+    // Skip weekends if weekdays only
+    if (weekdaysOnly && (dayOfWeek === 0 || dayOfWeek === 6)) {
+      check.setDate(check.getDate() - 1);
+      continue;
+    }
+    const checkStr = check.toISOString().split('T')[0];
+    if (!dates.has(checkStr)) break;
     streak++;
-    const d = new Date(check);
-    d.setDate(d.getDate() - 1);
-    check = d.toISOString().split('T')[0];
+    check.setDate(check.getDate() - 1);
   }
+
   habit.streak = streak;
   habit.bestStreak = Math.max(habit.bestStreak, streak);
 
@@ -156,6 +192,73 @@ app.delete('/api/habits/:id', (req, res) => {
   data.habits = data.habits.filter(h => h.id !== parseInt(req.params.id));
   saveData(data);
   res.json({ ok: true });
+});
+
+// ── HiBob Leave ──────────────────────────────────────────────────────────────
+
+function hibobRequest(urlStr) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlStr);
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: 'GET',
+      headers: { 'Authorization': `Basic ${HIBOB_AUTH}`, 'Accept': 'application/json' },
+      rejectUnauthorized: false,
+    };
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+function getWeekRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day + (day === 0 ? -6 : 1));
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  return { from: monday.toISOString().split('T')[0], to: friday.toISOString().split('T')[0] };
+}
+
+function getFiveWeekRange() {
+  const now = new Date();
+  const from = new Date(now); from.setDate(now.getDate() + 1);
+  const to = new Date(now); to.setDate(now.getDate() + 35);
+  return { from: from.toISOString().split('T')[0], to: to.toISOString().split('T')[0] };
+}
+
+function filterLeaveByRange(changes, from, to) {
+  return changes.filter(c => c.startDate <= to && c.endDate >= from);
+}
+
+app.get('/api/leave', async (req, res) => {
+  try {
+    const since = new Date(); since.setDate(since.getDate() - 90);
+    const sinceStr = since.toISOString().replace(/\.\d+Z$/, '+00:00');
+    const url = `https://api.hibob.com/v1/timeoff/requests/changes?since=${encodeURIComponent(sinceStr)}`;
+    const data = await hibobRequest(url);
+    const allLeave = (data.changes || [])
+      .filter(c => c.changeType !== 'Deleted' && c.status !== 'declined')
+      .filter(c => c.employeeEmail !== MY_EMAIL);
+
+    const week = getWeekRange();
+    const forecast = getFiveWeekRange();
+    const thisWeek = filterLeaveByRange(allLeave, week.from, week.to);
+    const thisWeekIds = new Set(thisWeek.map(l => l.requestId));
+    const upcoming = filterLeaveByRange(allLeave, forecast.from, forecast.to)
+      .filter(l => !thisWeekIds.has(l.requestId));
+
+    res.json({ thisWeek, upcoming, weekRange: week });
+  } catch (err) {
+    console.error('HiBob error:', err);
+    res.status(500).json({ error: 'Failed to fetch leave data' });
+  }
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

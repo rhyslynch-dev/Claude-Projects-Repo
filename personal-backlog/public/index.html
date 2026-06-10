@@ -31,13 +31,34 @@
       <!-- Task Board -->
       <div class="task-board" id="taskBoard"></div>
 
-      <!-- Habits Panel -->
-      <div class="habits-panel">
-        <div class="habits-header">
-          <div class="panel-title">Daily Habits 🔥</div>
-          <button class="btn-add-habit" id="addHabitBtn">+ Add</button>
+      <!-- Right Column -->
+      <div class="right-column">
+
+        <!-- Habits Panel -->
+        <div class="habits-panel">
+          <div class="habits-header">
+            <div class="panel-title">Daily Habits 🔥</div>
+            <button class="btn-add-habit" id="addHabitBtn">+ Add</button>
+          </div>
+          <div class="habits-list" id="habitsList"></div>
         </div>
-        <div class="habits-list" id="habitsList"></div>
+
+        <!-- Leave Panel -->
+        <div class="leave-panel" id="leavePanel">
+          <div class="leave-panel-header">
+            <div class="panel-title">Team Leave 🏖️</div>
+            <button class="btn-refresh-leave" id="refreshLeave">↻</button>
+          </div>
+          <div class="leave-section">
+            <div class="leave-section-label">THIS WEEK</div>
+            <div class="leave-list" id="leaveThisWeek"><div class="leave-loading">Loading...</div></div>
+          </div>
+          <div class="leave-section">
+            <div class="leave-section-label">UPCOMING</div>
+            <div class="leave-list" id="leaveUpcoming"><div class="leave-loading">Loading...</div></div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -74,19 +95,26 @@
     </div>
   </div>
 
-  <!-- Add Habit Modal -->
+  <!-- Add/Edit Habit Modal -->
   <div class="modal-overlay" id="habitModal">
     <div class="modal">
-      <h2>Add Habit</h2>
+      <h2 id="habitModalTitle">Add Habit</h2>
       <div class="modal-body">
         <label>Habit Name</label>
         <input type="text" id="habitName" placeholder="e.g. Daily Exercise" />
-        <label>Emoji</label>
-        <input type="text" id="habitEmoji" placeholder="e.g. 💪" maxlength="2" />
+        <label>Schedule</label>
+        <div class="schedule-toggle">
+          <button class="schedule-btn active" data-schedule="daily">Every Day</button>
+          <button class="schedule-btn" data-schedule="weekdays">Mon–Fri Only</button>
+        </div>
+        <input type="hidden" id="habitSchedule" value="daily" />
+        <label>Pick an Emoji</label>
+        <div class="emoji-picker" id="emojiPicker"></div>
+        <input type="hidden" id="habitEmoji" value="✅" />
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" id="habitCancel">Cancel</button>
-        <button class="btn-save" id="habitSave">Add Habit</button>
+        <button class="btn-save" id="habitSave">Save Habit</button>
       </div>
     </div>
   </div>

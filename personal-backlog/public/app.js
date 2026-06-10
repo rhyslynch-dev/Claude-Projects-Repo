@@ -23,16 +23,15 @@ function todayStr() {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const today = todayStr();
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
-  const in7 = new Date(); in7.setDate(in7.getDate() + 7);
+  const in3 = new Date(); in3.setDate(in3.getDate() + 3);
+  const in3Str = `${in3.getFullYear()}-${String(in3.getMonth()+1).padStart(2,'0')}-${String(in3.getDate()).padStart(2,'0')}`;
 
   const d = new Date(dateStr + 'T00:00:00');
+
   if (dateStr === today) return { label: 'Today', cls: 'today' };
-  if (dateStr === tomorrowStr) return { label: 'Tomorrow', cls: 'soon' };
   if (dateStr < today) return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: 'overdue' };
-  if (d <= in7) return { label: d.toLocaleDateString('en-GB', { weekday: 'long' }), cls: 'soon' };
-  return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: '' };
+  if (dateStr <= in3Str) return { label: d.toLocaleDateString('en-GB', { weekday: 'long' }), cls: 'soon' };
+  return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: 'distant' };
 }
 
 function formatHeaderDate() {
@@ -188,11 +187,16 @@ function renderHabits() {
         <div class="habit-stats">
           <span class="habit-streak">🔥 ${habit.streak} day streak</span>
           <span class="habit-best">Best: ${habit.bestStreak}</span>
+          ${habit.weekdaysOnly ? '<span class="habit-schedule">Mon–Fri</span>' : ''}
         </div>
       </div>
-      <button class="habit-delete" data-id="${habit.id}">×</button>
+      <div class="habit-actions">
+        <button class="habit-edit" data-id="${habit.id}">✏️</button>
+        <button class="habit-delete" data-id="${habit.id}">×</button>
+      </div>
     `;
     card.querySelector('.habit-toggle').addEventListener('click', () => toggleHabit(habit.id));
+    card.querySelector('.habit-edit').addEventListener('click', () => openEditHabit(habit.id));
     card.querySelector('.habit-delete').addEventListener('click', () => deleteHabit(habit.id));
     list.appendChild(card);
   }
@@ -244,6 +248,21 @@ async function deleteHabit(id) {
   await api('DELETE', `/api/habits/${id}`);
   habits = habits.filter(h => h.id !== id);
   renderHabits();
+}
+
+let editingHabitId = null;
+
+function openEditHabit(id) {
+  const habit = habits.find(h => h.id === id);
+  if (!habit) return;
+  editingHabitId = id;
+  document.getElementById('habitModalTitle').textContent = 'Edit Habit';
+  document.getElementById('habitName').value = habit.name;
+  document.getElementById('habitEmoji').value = habit.emoji;
+  setSchedule(habit.weekdaysOnly ? 'weekdays' : 'daily');
+  buildEmojiPicker(habit.emoji);
+  document.getElementById('habitModal').classList.add('open');
+  setTimeout(() => document.getElementById('habitName').focus(), 100);
 }
 
 // ── Task Modal ────────────────────────────────────────────────────────────────
@@ -335,9 +354,65 @@ document.getElementById('taskName').addEventListener('keydown', e => {
 
 // ── Habit Modal ───────────────────────────────────────────────────────────────
 
+const HABIT_EMOJIS = [
+  // Fitness & Health
+  '💪','🏃','🚴','🏋️','🤸','🧘','🏊','🚶','⛹️','🤾',
+  '🏇','🧗','🤼','🥊','🏄','🎽','👟','🩺','💊','🩻',
+  // Food & Drink
+  '🥗','🥦','🍎','🍌','🥑','💧','🧃','☕','🍵','🥤',
+  '🍳','🥣','🫐','🍇','🍓','🥕','🧄','🫚','🍱','🥙',
+  // Mind & Learning
+  '📚','📖','✍️','🧠','💡','🎓','📝','🔬','🔭','🗺️',
+  '📰','🗞️','💭','🧩','♟️','🎯','📊','📈','🖊️','📓',
+  // Work & Productivity
+  '💻','📱','⌨️','🖥️','📧','📅','✅','☑️','📌','🗂️',
+  '💼','🤝','📞','🔔','⏰','⏱️','🗓️','📋','🔑','🏆',
+  // Lifestyle & Wellbeing
+  '😴','🛌','🧹','🪴','🌿','🌱','🐾','🎵','🎨','🎮',
+  '🎬','📷','✈️','🏠','🚗','🛁','🪥','🧴','🪞','🪑',
+  // Nature & Outdoors
+  '🌞','🌙','⭐','🌈','🌊','🏔️','🌲','🌸','🌻','🍀',
+  '🦋','🐦','🌍','⛰️','🏕️','🌅','❄️','🌺','🍁','🍂',
+  // Emotions & Symbols
+  '❤️','🙏','😊','🔥','⚡','💫','✨','🎉','🥳','👏',
+  '💯','🚀','🎖️','🏅','🥇','👑','💎','🌟','💥','🎊',
+];
+
+function buildEmojiPicker(selected = '✅') {
+  const picker = document.getElementById('emojiPicker');
+  picker.innerHTML = '';
+  HABIT_EMOJIS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-option' + (emoji === selected ? ' selected' : '');
+    btn.textContent = emoji;
+    btn.type = 'button';
+    btn.addEventListener('click', () => {
+      document.getElementById('habitEmoji').value = emoji;
+      picker.querySelectorAll('.emoji-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    picker.appendChild(btn);
+  });
+}
+
+function setSchedule(value) {
+  document.getElementById('habitSchedule').value = value;
+  document.querySelectorAll('.schedule-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.schedule === value);
+  });
+}
+
+document.querySelectorAll('.schedule-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSchedule(btn.dataset.schedule));
+});
+
 document.getElementById('addHabitBtn').addEventListener('click', () => {
+  editingHabitId = null;
+  document.getElementById('habitModalTitle').textContent = 'Add Habit';
   document.getElementById('habitName').value = '';
-  document.getElementById('habitEmoji').value = '';
+  document.getElementById('habitEmoji').value = '✅';
+  setSchedule('daily');
+  buildEmojiPicker('✅');
   document.getElementById('habitModal').classList.add('open');
   setTimeout(() => document.getElementById('habitName').focus(), 100);
 });
@@ -348,10 +423,20 @@ document.getElementById('habitCancel').addEventListener('click', () => {
 
 document.getElementById('habitSave').addEventListener('click', async () => {
   const name = document.getElementById('habitName').value.trim();
-  const emoji = document.getElementById('habitEmoji').value.trim() || '✅';
+  const emoji = document.getElementById('habitEmoji').value || '✅';
   if (!name) return;
-  const habit = await api('POST', '/api/habits', { name, emoji });
-  habits.push(habit);
+
+  const weekdaysOnly = document.getElementById('habitSchedule').value === 'weekdays';
+
+  if (editingHabitId) {
+    const updated = await api('PATCH', `/api/habits/${editingHabitId}`, { name, emoji, weekdaysOnly });
+    habits = habits.map(h => h.id === editingHabitId ? updated : h);
+    editingHabitId = null;
+  } else {
+    const habit = await api('POST', '/api/habits', { name, emoji, weekdaysOnly });
+    habits.push(habit);
+  }
+
   document.getElementById('habitModal').classList.remove('open');
   renderHabits();
 });
@@ -426,9 +511,44 @@ function saveOrder(sectionEl) {
   if (ids.length) api('POST', '/api/tasks/reorder', { orderedIds: ids });
 }
 
+// ── Leave ─────────────────────────────────────────────────────────────────────
+
+function formatLeaveDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function renderLeaveList(elementId, entries, emptyMsg) {
+  const el = document.getElementById(elementId);
+  if (!entries || entries.length === 0) {
+    el.innerHTML = `<div class="leave-empty">${emptyMsg}</div>`;
+    return;
+  }
+  el.innerHTML = entries.map(e => `
+    <div class="leave-entry">
+      <div class="leave-name">${e.employeeDisplayName}</div>
+      <div class="leave-dates">${formatLeaveDate(e.startDate)} – ${formatLeaveDate(e.endDate)}</div>
+    </div>
+  `).join('');
+}
+
+async function loadLeave() {
+  try {
+    const data = await api('GET', '/api/leave');
+    renderLeaveList('leaveThisWeek', data.thisWeek, '✅ All team in this week');
+    renderLeaveList('leaveUpcoming', data.upcoming, '✅ No upcoming leave');
+  } catch {
+    document.getElementById('leaveThisWeek').innerHTML = '<div class="leave-empty">Unable to load</div>';
+    document.getElementById('leaveUpcoming').innerHTML = '<div class="leave-empty">Unable to load</div>';
+  }
+}
+
+document.getElementById('refreshLeave').addEventListener('click', loadLeave);
+
 async function init() {
   document.getElementById('dateLabel').textContent = formatHeaderDate();
   loadWeather();
+  loadLeave();
 
   [tasks, habits] = await Promise.all([
     api('GET', '/api/tasks'),
