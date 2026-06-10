@@ -64,6 +64,9 @@ function renderBoard() {
       .filter(t => t.section === section.key)
       .sort((a, b) => {
         if (a.priority !== b.priority) return a.priority === 'A' ? -1 : 1;
+        if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
         return (a.order || 0) - (b.order || 0);
       });
     const isCollapsed = collapsedSections.has(section.key);
@@ -212,9 +215,58 @@ async function toggleTask(id) {
   if (!task) return;
   const completedAt = task.completedAt ? null : new Date().toISOString();
   const section = completedAt ? 'completed' : 'today';
+  if (completedAt) {
+    const btn = document.querySelector(`.task-check[data-id="${id}"]`);
+    if (btn) burstConfetti(btn);
+  }
   const updated = await api('PATCH', `/api/tasks/${id}`, { completedAt, section });
   tasks = tasks.map(t => t.id === id ? updated : t);
   renderBoard();
+}
+
+function burstConfetti(originEl) {
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colours = ['#0E46AE', '#6b9eff', '#ffd700', '#ff6b6b', '#51cf66', '#ff922b'];
+  const count = 36;
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
+    el.style.cssText = `
+      position: fixed;
+      left: ${cx}px;
+      top: ${cy}px;
+      width: ${5 + Math.random() * 5}px;
+      height: ${5 + Math.random() * 5}px;
+      background: ${colours[Math.floor(Math.random() * colours.length)]};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 1;
+    `;
+    document.body.appendChild(el);
+
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const speed = 60 + Math.random() * 80;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed - 40;
+    const gravity = 120 + Math.random() * 80;
+    const duration = 700 + Math.random() * 300;
+    const start = performance.now();
+
+    (function animate(now) {
+      const t = (now - start) / 1000;
+      if (t * 1000 > duration) { el.remove(); return; }
+      const x = cx + vx * t;
+      const y = cy + vy * t + 0.5 * gravity * t * t;
+      const opacity = 1 - (t * 1000 / duration);
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.opacity = opacity;
+      requestAnimationFrame(animate);
+    })(start);
+  }
 }
 
 async function deleteTask(id) {
@@ -558,8 +610,19 @@ async function init() {
     api('GET', '/api/habits'),
   ]);
 
+  await autoMoveOverdueTasks();
+
   renderBoard();
   renderHabits();
+}
+
+async function autoMoveOverdueTasks() {
+  const today = todayStr();
+  const toMove = tasks.filter(t => t.dueDate === today && t.section !== 'today' && t.section !== 'completed');
+  for (const task of toMove) {
+    const updated = await api('PATCH', `/api/tasks/${task.id}`, { section: 'today' });
+    tasks = tasks.map(t => t.id === task.id ? updated : t);
+  }
 }
 
 init();
