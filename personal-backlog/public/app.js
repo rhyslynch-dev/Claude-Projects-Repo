@@ -23,6 +23,8 @@ function todayStr() {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const today = todayStr();
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
   const in3 = new Date(); in3.setDate(in3.getDate() + 3);
   const in3Str = `${in3.getFullYear()}-${String(in3.getMonth()+1).padStart(2,'0')}-${String(in3.getDate()).padStart(2,'0')}`;
 
@@ -30,6 +32,7 @@ function formatDate(dateStr) {
 
   if (dateStr === today) return { label: 'Today', cls: 'today' };
   if (dateStr < today) return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: 'overdue' };
+  if (dateStr === tomorrowStr) return { label: 'Tomorrow', cls: 'soon' };
   if (dateStr <= in3Str) return { label: d.toLocaleDateString('en-GB', { weekday: 'long' }), cls: 'soon' };
   return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: 'distant' };
 }
