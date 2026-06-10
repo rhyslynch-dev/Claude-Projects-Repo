@@ -16,14 +16,15 @@ const collapsedSections = new Set(['completed']);
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const today = todayStr();
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
   const in7 = new Date(); in7.setDate(in7.getDate() + 7);
 
   const d = new Date(dateStr + 'T00:00:00');
@@ -57,7 +58,12 @@ function renderBoard() {
   board.innerHTML = '';
 
   for (const section of SECTIONS) {
-    const sectionTasks = tasks.filter(t => t.section === section.key);
+    const sectionTasks = tasks
+      .filter(t => t.section === section.key)
+      .sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority === 'A' ? -1 : 1;
+        return (a.order || 0) - (b.order || 0);
+      });
     const isCollapsed = collapsedSections.has(section.key);
 
     const el = document.createElement('div');
@@ -91,6 +97,13 @@ function renderBoard() {
           body.appendChild(buildTaskRow(task));
         }
       }
+      // Quick add button
+      const quickAdd = document.createElement('div');
+      quickAdd.className = 'section-quick-add';
+      quickAdd.innerHTML = `<button class="btn-quick-add">+ Add</button>`;
+      quickAdd.querySelector('.btn-quick-add').addEventListener('click', () => openAddTaskForSection(section.key));
+      el.appendChild(quickAdd);
+
       el.appendChild(body);
 
       Sortable.create(body, {
@@ -109,6 +122,10 @@ function renderBoard() {
           if (evt.from.querySelectorAll('.task-row').length === 0) {
             evt.from.innerHTML = `<div class="section-empty">No tasks here</div>`;
           }
+          saveOrder(evt.to);
+        },
+        onEnd: (evt) => {
+          saveOrder(evt.to);
         },
       });
     }
@@ -126,16 +143,24 @@ function buildTaskRow(task) {
 
   row.innerHTML = `
     <button class="task-check ${task.completedAt ? 'done' : ''}" data-id="${task.id}"></button>
-    <div class="task-name" data-id="${task.id}">${task.name}</div>
-    ${task.notes ? `<div class="task-notes">${task.notes}</div>` : '<div class="task-notes-empty"></div>'}
-    ${due ? `<div class="task-due ${due.cls}">${due.label}</div>` : ''}
-    <span class="priority-badge ${task.priority}">${task.priority}</span>
-    <button class="task-delete" data-id="${task.id}">×</button>
+    <div class="task-content">
+      <div class="task-name" data-id="${task.id}">${task.name}</div>
+      ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
+    </div>
+    <div class="task-meta">
+      ${due ? `<div class="task-due ${due.cls}">${due.label}</div>` : ''}
+      <span class="priority-badge ${task.priority}">${task.priority}</span>
+      <button class="task-delete" data-id="${task.id}">×</button>
+    </div>
   `;
 
-  row.querySelector('.task-check').addEventListener('click', () => toggleTask(task.id));
-  row.querySelector('.task-name').addEventListener('click', () => openEditTask(task.id));
-  row.querySelector('.task-delete').addEventListener('click', () => deleteTask(task.id));
+  row.querySelector('.task-check').addEventListener('click', (e) => { e.stopPropagation(); toggleTask(task.id); });
+  row.querySelector('.task-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteTask(task.id); });
+  row.addEventListener('click', (e) => {
+    if (!e.target.closest('.task-check') && !e.target.closest('.task-delete')) {
+      openEditTask(task.id);
+    }
+  });
 
   return row;
 }
@@ -223,12 +248,36 @@ async function deleteHabit(id) {
 
 // ── Task Modal ────────────────────────────────────────────────────────────────
 
+function openAddTaskForSection(sectionKey) {
+  editingTaskId = null;
+  document.getElementById('taskModalTitle').textContent = 'Add Task';
+  document.getElementById('taskName').value = '';
+  document.getElementById('taskSection').value = sectionKey;
+  document.getElementById('taskNotes').value = '';
+  selectedPriority = 'A';
+  document.querySelectorAll('.priority-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.priority === 'A');
+  });
+  if (sectionKey === 'today') {
+    datePicker.setDate(todayStr());
+  } else {
+    datePicker.clear();
+  }
+  document.getElementById('taskModal').classList.add('open');
+  setTimeout(() => document.getElementById('taskName').focus(), 100);
+}
+
 document.getElementById('addTaskBtn').addEventListener('click', () => {
   editingTaskId = null;
   document.getElementById('taskModalTitle').textContent = 'Add Task';
   document.getElementById('taskName').value = '';
   document.getElementById('taskSection').value = 'today';
-  datePicker.clear();
+  const defaultSection = document.getElementById('taskSection').value;
+  if (defaultSection === 'today') {
+    datePicker.setDate(todayStr());
+  } else {
+    datePicker.clear();
+  }
   document.getElementById('taskNotes').value = '';
   selectedPriority = 'A';
   document.querySelectorAll('.priority-btn').forEach(b => {
@@ -244,6 +293,16 @@ document.querySelectorAll('.priority-btn').forEach(btn => {
     document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   });
+});
+
+document.getElementById('taskSection').addEventListener('change', (e) => {
+  if (!editingTaskId) {
+    if (e.target.value === 'today') {
+      datePicker.setDate(todayStr());
+    } else {
+      datePicker.clear();
+    }
+  }
 });
 
 document.getElementById('taskCancel').addEventListener('click', () => {
@@ -314,8 +373,62 @@ const datePicker = flatpickr('#taskDueDate', {
   disableMobile: true,
 });
 
+// ── Weather ───────────────────────────────────────────────────────────────────
+
+function getWeatherEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2) return '⛅';
+  if (code === 3) return '☁️';
+  if (code <= 49) return '🌫️';
+  if (code <= 59) return '🌦️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '🌨️';
+  if (code <= 84) return '🌧️';
+  if (code <= 94) return '⛈️';
+  return '🌩️';
+}
+
+function getWeatherDesc(code) {
+  if (code === 0) return 'Clear';
+  if (code <= 2) return 'Partly Cloudy';
+  if (code === 3) return 'Overcast';
+  if (code <= 49) return 'Foggy';
+  if (code <= 59) return 'Drizzle';
+  if (code <= 69) return 'Rain';
+  if (code <= 79) return 'Snow';
+  if (code <= 84) return 'Showers';
+  if (code <= 94) return 'Thunderstorm';
+  return 'Storm';
+}
+
+async function loadWeather() {
+  const widget = document.getElementById('weatherWidget');
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+    try {
+      const { latitude: lat, longitude: lon } = coords;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const { temperature, weathercode } = data.current_weather;
+      const emoji = getWeatherEmoji(weathercode);
+      const desc  = getWeatherDesc(weathercode);
+      widget.innerHTML = `${emoji} ${Math.round(temperature)}°C <span class="weather-desc">${desc}</span>`;
+    } catch {
+      widget.innerHTML = '🌡️ --';
+    }
+  }, () => { widget.innerHTML = '📍 Location off'; });
+}
+
+function saveOrder(sectionEl) {
+  const ids = [...sectionEl.querySelectorAll('.task-row')].map(r => r.dataset.id);
+  if (ids.length) api('POST', '/api/tasks/reorder', { orderedIds: ids });
+}
+
 async function init() {
   document.getElementById('dateLabel').textContent = formatHeaderDate();
+  loadWeather();
 
   [tasks, habits] = await Promise.all([
     api('GET', '/api/tasks'),

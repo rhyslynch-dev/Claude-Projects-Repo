@@ -114,7 +114,7 @@ function hibobRequest(urlStr) {
 
 async function fetchAllLeave() {
   const since = new Date();
-  since.setDate(since.getDate() - 30);
+  since.setDate(since.getDate() - 90); // go back 90 days to catch leave booked well in advance
   const sinceStr = since.toISOString().replace(/\.\d+Z$/, '+00:00');
   const url = `https://api.hibob.com/v1/timeoff/requests/changes?since=${encodeURIComponent(sinceStr)}`;
   const data = await hibobRequest(url);
@@ -138,10 +138,12 @@ function getWeekRange() {
   };
 }
 
-function getMonthRange() {
+function getFiveWeekRange() {
   const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const from = new Date(now);
+  from.setDate(now.getDate() + 1); // start from tomorrow
+  const to = new Date(now);
+  to.setDate(now.getDate() + 35); // 5 weeks ahead
   return {
     from: from.toISOString().split('T')[0],
     to: to.toISOString().split('T')[0],
@@ -150,17 +152,17 @@ function getMonthRange() {
 
 app.get('/api/leave', async (req, res) => {
   try {
-    const week = getWeekRange();
-    const month = getMonthRange();
+    const week     = getWeekRange();
+    const forecast = getFiveWeekRange();
 
     const allLeave = await fetchAllLeave();
 
-    const thisWeek  = filterLeaveByRange(allLeave, week.from, week.to);
+    const thisWeek    = filterLeaveByRange(allLeave, week.from, week.to);
     const thisWeekIds = new Set(thisWeek.map(l => l.requestId));
-    const thisMonth = filterLeaveByRange(allLeave, month.from, month.to)
+    const upcoming    = filterLeaveByRange(allLeave, forecast.from, forecast.to)
       .filter(l => !thisWeekIds.has(l.requestId));
 
-    res.json({ thisWeek, thisMonth, weekRange: week, monthRange: month });
+    res.json({ thisWeek, thisMonth: upcoming, weekRange: week, monthRange: forecast });
   } catch (err) {
     console.error('HiBob error:', err);
     res.status(500).json({ error: 'Failed to fetch leave data' });
