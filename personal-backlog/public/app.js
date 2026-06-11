@@ -37,6 +37,29 @@ function formatDate(dateStr) {
   return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), cls: 'distant' };
 }
 
+function resolveSection(dueDate, currentSection) {
+  if (currentSection === 'completed') return 'completed';
+  if (!dueDate) return currentSection === 'today' ? 'backlog' : currentSection;
+
+  const today = todayStr();
+  if (dueDate === today) return 'today';
+
+  // End of current week (Sunday)
+  const now = new Date();
+  const endOfWeek = new Date(now);
+  endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+  const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
+
+  // End of current month
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const endOfMonthStr = endOfMonth.toISOString().split('T')[0];
+
+  if (dueDate < today) return currentSection === 'today' ? 'today' : currentSection;
+  if (dueDate <= endOfWeekStr) return 'thisWeek';
+  if (dueDate <= endOfMonthStr) return 'thisMonth';
+  return 'backlog';
+}
+
 function formatHeaderDate() {
   const d = new Date();
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -386,8 +409,8 @@ document.getElementById('taskCancel').addEventListener('click', () => {
 document.getElementById('taskSave').addEventListener('click', async () => {
   const name = document.getElementById('taskName').value.trim();
   if (!name) return;
-  const section = document.getElementById('taskSection').value;
   const dueDate = document.getElementById('taskDueDate').value || null;
+  const section = resolveSection(dueDate, document.getElementById('taskSection').value);
   const notes = document.getElementById('taskNotes').value.trim() || null;
 
   if (editingTaskId) {
