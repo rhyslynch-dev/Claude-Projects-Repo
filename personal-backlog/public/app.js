@@ -86,6 +86,9 @@ function renderBoard() {
     const sectionTasks = tasks
       .filter(t => t.section === section.key)
       .sort((a, b) => {
+        if (section.key === 'completed') {
+          return (b.completedAt || '').localeCompare(a.completedAt || '');
+        }
         if (a.priority !== b.priority) return a.priority === 'A' ? -1 : 1;
         if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
         if (a.dueDate) return -1;
