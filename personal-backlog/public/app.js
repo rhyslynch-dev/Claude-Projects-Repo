@@ -89,10 +89,13 @@ function renderBoard() {
         if (section.key === 'completed') {
           return (b.completedAt || '').localeCompare(a.completedAt || '');
         }
-        if (a.priority !== b.priority) return a.priority === 'A' ? -1 : 1;
-        if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+        if (a.dueDate && b.dueDate) {
+          if (a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+          return a.priority === b.priority ? (a.order || 0) - (b.order || 0) : a.priority === 'A' ? -1 : 1;
+        }
         if (a.dueDate) return -1;
         if (b.dueDate) return 1;
+        if (a.priority !== b.priority) return a.priority === 'A' ? -1 : 1;
         return (a.order || 0) - (b.order || 0);
       });
     const isCollapsed = collapsedSections.has(section.key);
