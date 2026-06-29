@@ -84,6 +84,11 @@ function buildCard(m, mData, kudos) {
   return card;
 }
 
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
 function buildField(label, field, memberId, value, placeholder) {
   const wrap = document.createElement('div');
   wrap.innerHTML = `<div class="section-label">${label}</div>`;
@@ -96,6 +101,7 @@ function buildField(label, field, memberId, value, placeholder) {
 
   let debounce;
   ta.addEventListener('input', () => {
+    autoResize(ta);
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       socket.emit('update-field', {
@@ -106,6 +112,9 @@ function buildField(label, field, memberId, value, placeholder) {
       });
     }, 400);
   });
+
+  // Resize after render so initial content fits
+  requestAnimationFrame(() => autoResize(ta));
 
   wrap.appendChild(ta);
   return wrap;
@@ -262,7 +271,7 @@ function openKudosModal(preselectedTo = null) {
   const toSel = document.getElementById('kudosTo');
   const msg = document.getElementById('kudosMessage');
 
-  fromSel.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  fromSel.innerHTML = `<option value="" disabled selected>Who's giving kudos?</option>` + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
   toSel.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 
   if (preselectedTo) toSel.value = preselectedTo;
@@ -275,9 +284,15 @@ document.getElementById('kudosCancel').addEventListener('click', () => {
 });
 
 document.getElementById('kudosSend').addEventListener('click', () => {
-  const from = document.getElementById('kudosFrom').value;
+  const fromSel = document.getElementById('kudosFrom');
   const to = document.getElementById('kudosTo').value;
   const message = document.getElementById('kudosMessage').value;
+  const from = fromSel.value;
+  if (!from) {
+    fromSel.classList.add('field-error');
+    fromSel.addEventListener('change', () => fromSel.classList.remove('field-error'), { once: true });
+    return;
+  }
   if (!message.trim()) return;
   socket.emit('add-kudos', { weekKey: currentWeekKey, from, to, message });
   document.getElementById('kudosModal').classList.remove('open');

@@ -242,7 +242,8 @@ textarea {
   line-height: 1.5;
   padding: 10px 12px;
   resize: none;
-  min-height: 80px;
+  min-height: 60px;
+  overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 textarea:focus {
@@ -375,6 +376,18 @@ textarea::placeholder { color: #a0a0a0; }
   padding: 10px 12px;
 }
 .modal-body select { min-height: 40px; }
+
+.field-error {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px rgba(228,40,40,0.2);
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
 
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
