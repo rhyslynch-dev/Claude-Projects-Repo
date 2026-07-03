@@ -455,6 +455,25 @@ main { flex: 1; padding: 24px 20px; }
 .emoji-option:hover { background: var(--surface); border-color: var(--border); }
 .emoji-option.selected { background: var(--surface); border-color: var(--accent); }
 
+.due-date-wrap { position: relative; display: flex; align-items: center; }
+.due-date-wrap input { flex: 1; }
+.btn-clear-date {
+  display: none;
+  position: absolute;
+  right: 10px;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+.btn-clear-date:hover { color: var(--red); }
+
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .btn-cancel { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
 .btn-cancel:hover { color: var(--text); }

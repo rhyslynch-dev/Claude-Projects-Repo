@@ -84,7 +84,10 @@
           <button class="priority-btn" data-priority="B">B — Should Do</button>
         </div>
         <label>Due Date <span class="optional">(optional)</span></label>
-        <input type="text" id="taskDueDate" placeholder="Select a date..." readonly />
+        <div class="due-date-wrap">
+          <input type="text" id="taskDueDate" placeholder="Select a date..." readonly />
+          <button type="button" class="btn-clear-date" id="clearDueDate" title="Clear date">×</button>
+        </div>
         <label>Notes <span class="optional">(optional)</span></label>
         <textarea id="taskNotes" placeholder="Anything relevant to this task..." rows="3" maxlength="150"></textarea>
       </div>

@@ -39,7 +39,7 @@ function formatDate(dateStr) {
 
 function resolveSection(dueDate, currentSection) {
   if (currentSection === 'completed') return 'completed';
-  if (!dueDate) return currentSection === 'today' ? 'backlog' : currentSection;
+  if (!dueDate) return 'backlog';
 
   const today = todayStr();
   if (dueDate === today) return 'today';
@@ -312,6 +312,7 @@ function openEditTask(id) {
   document.getElementById('taskName').value = task.name;
   document.getElementById('taskSection').value = task.section;
   datePicker.setDate(task.dueDate || null);
+  document.getElementById('clearDueDate').style.display = task.dueDate ? 'flex' : 'none';
   document.getElementById('taskNotes').value = task.notes || '';
   selectedPriority = task.priority;
   document.querySelectorAll('.priority-btn').forEach(b => {
@@ -540,6 +541,14 @@ const datePicker = flatpickr('#taskDueDate', {
   altFormat: 'd/m/Y',
   minDate: 'today',
   disableMobile: true,
+  onChange: (dates) => {
+    document.getElementById('clearDueDate').style.display = dates.length ? 'flex' : 'none';
+  },
+});
+
+document.getElementById('clearDueDate').addEventListener('click', () => {
+  datePicker.clear();
+  document.getElementById('clearDueDate').style.display = 'none';
 });
 
 // ── Weather ───────────────────────────────────────────────────────────────────
