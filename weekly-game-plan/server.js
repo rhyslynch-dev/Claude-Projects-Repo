@@ -28,10 +28,11 @@ const PORT = process.env.PORT || 3000;
 
 const MEMBERS = [
   { id: 'rhys',   name: 'Rhys Lynch',     initials: 'RL', color: '#4F86C6', photo: '/images/Rhys.png'   },
-  { id: 'nate',   name: 'Nate Smithen',   initials: 'NS', color: '#E07BB5', photo: '/images/Nate.png'   },
+  { id: 'nate',   name: 'Nathaniel Smithen',   initials: 'NS', color: '#E07BB5', photo: '/images/Nate.png'   },
   { id: 'david',  name: 'David Rossiter', initials: 'DR', color: '#9B59B6', photo: '/images/David.png'  },
   { id: 'rowena', name: 'Rowena Ramsay',  initials: 'RR', color: '#E67E22', photo: '/images/Row.png'    },
   { id: 'arslan', name: 'Arslan Nasir',   initials: 'AN', color: '#27AE60', photo: '/images/Arslan.jpg' },
+  { id: 'megan',  name: 'Megan Wharton', initials: 'MW', color: '#E74C3C', photo: '/images/Megan.jpg'  },
 ];
 
 function loadData() {

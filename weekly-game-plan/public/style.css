@@ -109,25 +109,26 @@ button:active { transform: scale(0.97); }
 .btn-new-week:hover { background: var(--accent-hover); }
 
 /* ── Layout ── */
-main { flex: 1; padding: 24px 20px; overflow-x: auto; }
+main { flex: 1; padding: 24px 20px; }
 
 .layout {
   display: flex;
   gap: 20px;
   align-items: flex-start;
-  min-width: max-content;
 }
 
 /* ── Board ── */
 .board {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  min-width: max-content;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Leave Panel ── */
 .leave-panel {
-  width: 240px;
+  width: 280px;
   flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -180,9 +181,7 @@ main { flex: 1; padding: 24px 20px; overflow-x: auto; }
 
 /* ── Member Card ── */
 .member-card {
-  width: calc((100vw - 140px) / 5);
-  min-width: 280px;
-  max-width: 380px;
+  width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -190,7 +189,6 @@ main { flex: 1; padding: 24px 20px; overflow-x: auto; }
   flex-direction: column;
   gap: 0;
   overflow: hidden;
-  flex-shrink: 0;
   height: fit-content;
 }
 

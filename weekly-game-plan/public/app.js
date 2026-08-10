@@ -494,6 +494,10 @@ document.getElementById('leaveRefresh').addEventListener('click', () => {
 async function init() {
   const res = await fetch('/api/members');
   members = await res.json();
+  for (let i = members.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [members[i], members[j]] = [members[j], members[i]];
+  }
 
   currentWeekKey = getWeekKey();
   document.getElementById('weekLabel').innerHTML =
