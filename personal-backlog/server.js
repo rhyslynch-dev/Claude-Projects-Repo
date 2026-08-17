@@ -239,12 +239,12 @@ function filterLeaveByRange(changes, from, to) {
 
 app.get('/api/leave', async (req, res) => {
   try {
-    const since = new Date(); since.setDate(since.getDate() - 90);
+    const since = new Date(); since.setDate(since.getDate() - 200);
     const sinceStr = since.toISOString().replace(/\.\d+Z$/, '+00:00');
     const url = `https://api.hibob.com/v1/timeoff/requests/changes?since=${encodeURIComponent(sinceStr)}`;
     const data = await hibobRequest(url);
     const allLeave = (data.changes || [])
-      .filter(c => c.changeType !== 'Deleted' && c.status !== 'declined')
+      .filter(c => !['Deleted', 'Canceled'].includes(c.changeType) && c.status !== 'declined')
       .filter(c => c.employeeEmail !== MY_EMAIL);
 
     const week = getWeekRange();

@@ -115,11 +115,11 @@ function hibobRequest(urlStr) {
 
 async function fetchAllLeave() {
   const since = new Date();
-  since.setDate(since.getDate() - 90); // go back 90 days to catch leave booked well in advance
+  since.setDate(since.getDate() - 200); // go back 200 days to catch leave booked well in advance
   const sinceStr = since.toISOString().replace(/\.\d+Z$/, '+00:00');
   const url = `https://api.hibob.com/v1/timeoff/requests/changes?since=${encodeURIComponent(sinceStr)}`;
   const data = await hibobRequest(url);
-  return (data.changes || []).filter(c => c.changeType !== 'Deleted' && c.status !== 'declined');
+  return (data.changes || []).filter(c => !['Deleted', 'Canceled'].includes(c.changeType) && c.status !== 'declined');
 }
 
 function filterLeaveByRange(changes, from, to) {
@@ -144,7 +144,7 @@ function getFiveWeekRange() {
   const from = new Date(now);
   from.setDate(now.getDate() + 1); // start from tomorrow
   const to = new Date(now);
-  to.setDate(now.getDate() + 35); // 5 weeks ahead
+  to.setDate(now.getDate() + 70); // 10 weeks ahead
   return {
     from: from.toISOString().split('T')[0],
     to: to.toISOString().split('T')[0],

@@ -455,14 +455,51 @@ function formatLeaveDate(dateStr) {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+function nextWorkingDay(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + 1);
+  while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().split('T')[0];
+}
+
+function mergeAndSortLeave(outs) {
+  if (!outs || outs.length === 0) return [];
+
+  // Sort by start date
+  const sorted = [...outs].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+  // For each person, merge consecutive blocks into a list
+  const byPerson = {};
+  for (const entry of sorted) {
+    const key = entry.employeeId;
+    if (!byPerson[key]) {
+      byPerson[key] = [{ ...entry }];
+    } else {
+      const blocks = byPerson[key];
+      const last = blocks[blocks.length - 1];
+      if (nextWorkingDay(last.endDate) >= entry.startDate) {
+        if (entry.endDate > last.endDate) last.endDate = entry.endDate;
+      } else {
+        blocks.push({ ...entry });
+      }
+    }
+  }
+
+  return Object.values(byPerson)
+    .flat()
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
 function renderLeaveList(containerId, outs, emptyMsg) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  if (!outs || outs.length === 0) {
+  const merged = mergeAndSortLeave(outs);
+  if (merged.length === 0) {
     el.innerHTML = `<div class="leave-all-in">${emptyMsg}</div>`;
     return;
   }
-  el.innerHTML = outs.map(out => `
+  el.innerHTML = merged.map(out => `
     <div class="leave-chip">
       <div class="leave-name">${out.employeeDisplayName || out.employeeId}</div>
       <div class="leave-dates">${formatLeaveDate(out.startDate)} – ${formatLeaveDate(out.endDate)}</div>
