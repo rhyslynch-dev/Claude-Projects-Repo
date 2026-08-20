@@ -1,8 +1,11 @@
 {
   "name": "weekly-game-plan",
   "version": "1.0.0",
-  "description": "Interactive weekly game plan board for Pure Whey ProTEAM",
+  "description": "Interactive weekly game plan board for the Digital Product team",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js"
   },

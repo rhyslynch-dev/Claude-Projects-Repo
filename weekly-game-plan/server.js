@@ -5,8 +5,6 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
-
 // Load .env
 if (fs.existsSync(path.join(__dirname, '.env'))) {
   fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(line => {
@@ -18,6 +16,15 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 const HIBOB_SERVICE_ID = process.env.HIBOB_SERVICE_ID;
 const HIBOB_TOKEN = process.env.HIBOB_TOKEN;
 const HIBOB_AUTH = Buffer.from(`${HIBOB_SERVICE_ID}:${HIBOB_TOKEN}`).toString('base64');
+
+// TLS certificate validation stays ON by default. It only needs disabling on
+// networks that intercept HTTPS with a self-signed root (e.g. the Bulk office
+// proxy, which breaks the HiBob call with SELF_SIGNED_CERT_IN_CHAIN).
+// Do NOT set this in a hosted environment such as Azure.
+const HIBOB_INSECURE_TLS = process.env.HIBOB_INSECURE_TLS === 'true';
+if (HIBOB_INSECURE_TLS) {
+  console.warn('⚠️  HIBOB_INSECURE_TLS=true — TLS certificate validation is DISABLED for HiBob requests.');
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -99,7 +106,7 @@ function hibobRequest(urlStr) {
         'Authorization': `Basic ${HIBOB_AUTH}`,
         'Accept': 'application/json',
       },
-      rejectUnauthorized: false,
+      rejectUnauthorized: !HIBOB_INSECURE_TLS,
     };
     const req = https.request(options, (res) => {
       let body = '';
