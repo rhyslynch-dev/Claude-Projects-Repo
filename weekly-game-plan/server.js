@@ -16,6 +16,16 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 const HIBOB_SERVICE_ID = process.env.HIBOB_SERVICE_ID;
 const HIBOB_TOKEN = process.env.HIBOB_TOKEN;
 const HIBOB_AUTH = Buffer.from(`${HIBOB_SERVICE_ID}:${HIBOB_TOKEN}`).toString('base64');
+const HIBOB_CONFIGURED = Boolean(HIBOB_SERVICE_ID && HIBOB_TOKEN);
+
+if (!HIBOB_CONFIGURED) {
+  console.warn(
+    '⚠️  HIBOB_SERVICE_ID and/or HIBOB_TOKEN are not set. The Team Leave panel\n' +
+    '    will show "no leave booked" rather than an error, which is\n' +
+    '    indistinguishable from a genuinely empty week. Set both to enable it.\n' +
+    '    In Azure these belong in Configuration → Application settings.'
+  );
+}
 
 // TLS certificate validation stays ON by default. It only needs disabling on
 // networks that intercept HTTPS with a self-signed root (e.g. the Bulk office
@@ -181,6 +191,11 @@ function getFiveWeekRange() {
 }
 
 app.get('/api/leave', async (req, res) => {
+  // Fail loudly rather than returning an empty result set, which the UI would
+  // render as "no leave booked" — indistinguishable from a quiet week.
+  if (!HIBOB_CONFIGURED) {
+    return res.status(503).json({ error: 'HiBob credentials not configured' });
+  }
   try {
     const week     = getWeekRange();
     const forecast = getFiveWeekRange();

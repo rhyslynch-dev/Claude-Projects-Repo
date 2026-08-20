@@ -74,7 +74,16 @@ Settings by the person who holds it) — not sent over email or chat, and not
 committed to the repository.
 
 If the HiBob panel is not needed on day one, the app starts and functions
-without these variables; the Team Leave panel will simply show a load error.
+without these variables: `/api/leave` returns HTTP 503, the panel shows a
+load error, and the rest of the board is unaffected. A warning is printed at
+startup so the misconfiguration is visible in the log stream.
+
+**Outbound network requirement:** the server makes HTTPS calls to
+`api.hibob.com` on port 443. This must be permitted from the App Service.
+Separately, confirm with whoever administers HiBob whether the service user's
+token is restricted by source IP — if it is, the App Service outbound IP
+addresses need allow-listing there, or the call will be rejected despite
+correct credentials.
 
 ### `HIBOB_INSECURE_TLS`
 
@@ -149,9 +158,14 @@ in front of it (App Service Authentication / Entra ID, or an IP restriction).
 2. Open the URL in two browsers, type in a field in one, confirm the text
    appears in the other within about a second. Confirms Socket.io is working
    end to end.
-3. Team Leave panel populates.
-   *"Failed to load" → check `HIBOB_SERVICE_ID` / `HIBOB_TOKEN`; the server
-   logs the underlying HiBob error.*
+3. Team Leave panel populates with real names.
+   *"Failed to load" → check `HIBOB_SERVICE_ID` / `HIBOB_TOKEN`. If they are
+   unset the endpoint returns HTTP 503 and the startup log carries an
+   explicit warning. If they are set but wrong, the server logs the
+   underlying HiBob error.*
+   *Panel shows "All team in this week" and "No upcoming leave" → verify
+   against HiBob directly before assuming it is correct. It may be accurate,
+   but confirm at least one known booking appears.*
 4. Restart the App Service, reload, and confirm previously entered text is
    still present. Confirms `data/` is on persisted storage, not ephemeral
    container disk.
