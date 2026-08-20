@@ -82,13 +82,34 @@ function createWeek(weekKey, prevWeekKey, allData) {
 
 function getOrCreateWeek(weekKey) {
   const data = loadData();
+  const keys = Object.keys(data.weeks).sort();
+
   if (!data.weeks[weekKey]) {
-    const keys = Object.keys(data.weeks).sort();
     const prevKey = keys.length ? keys[keys.length - 1] : null;
     data.weeks[weekKey] = createWeek(weekKey, prevKey, data);
     saveData(data);
+    return data.weeks[weekKey];
   }
-  return data.weeks[weekKey];
+
+  // Backfill members added to MEMBERS after this week was created. Without
+  // this, update-field writes to members[id] === undefined and throws,
+  // which crashes the process for everyone.
+  const week = data.weeks[weekKey];
+  const prevKey = keys.filter(k => k < weekKey).pop() || null;
+  let added = false;
+  for (const m of MEMBERS) {
+    if (!week.members[m.id]) {
+      week.members[m.id] = {
+        goal: '',
+        toAchieve: '',
+        lastWeekGoal: prevKey ? (data.weeks[prevKey].members[m.id]?.goal || '') : '',
+        outcomeStatus: null,
+      };
+      added = true;
+    }
+  }
+  if (added) saveData(data);
+  return week;
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -202,6 +223,10 @@ io.on('connection', (socket) => {
     const data = loadData();
     if (!data.weeks[weekKey]) return;
     if (!['goal', 'toAchieve', 'outcomeStatus'].includes(field)) return;
+    if (!data.weeks[weekKey].members[memberId]) {
+      console.warn(`update-field: unknown member "${memberId}" in week ${weekKey} — ignoring`);
+      return;
+    }
     data.weeks[weekKey].members[memberId][field] = value;
     saveData(data);
     io.to(weekKey).emit('field-updated', { memberId, field, value });
