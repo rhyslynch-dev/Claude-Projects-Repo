@@ -33,6 +33,7 @@ const MEMBERS = [
   { id: 'rowena', name: 'Rowena Ramsay',  initials: 'RR', color: '#E67E22', photo: '/images/Row.png'    },
   { id: 'arslan', name: 'Arslan Nasir',   initials: 'AN', color: '#27AE60', photo: '/images/Arslan.jpg' },
   { id: 'megan',  name: 'Megan Wharton', initials: 'MW', color: '#E74C3C', photo: '/images/Megan.jpg'  },
+  { id: 'sumit',  name: 'Sumit Ingle',   initials: 'SI', color: '#1ABC9C', photo: '/images/Sumit-Ingle.jpg' },
 ];
 
 function loadData() {
