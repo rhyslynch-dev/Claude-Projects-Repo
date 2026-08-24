@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1:1s | Rhys Lynch</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤝</text></svg>">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo"><img src="/images/bulk-logo.png" alt="Bulk" /></div>
+      <div class="header-title">
+        <h1>1:1s</h1>
+        <span class="subtitle">Rhys Lynch</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-label" id="dateLabel"></div>
+    </div>
+  </header>
+
+  <!-- Member Selector -->
+  <div class="member-bar" id="memberBar"></div>
+
+  <main id="mainContent">
+    <!-- Board rendered here -->
+  </main>
+
+  <!-- Topic Modal -->
+  <div class="modal-overlay" id="topicModal">
+    <div class="modal">
+      <h2 id="topicModalTitle">Add Topic</h2>
+      <div class="modal-body">
+        <label>Title</label>
+        <input type="text" id="topicText" placeholder="Topic title..." maxlength="150" />
+        <label>Description <span class="optional">(optional)</span></label>
+        <textarea id="topicDescription" placeholder="Any context or notes for this discussion..." rows="3" maxlength="400"></textarea>
+        <label>Added by</label>
+        <div class="addedby-toggle">
+          <button class="addedby-btn active" data-by="rhys">Rhys</button>
+          <button class="addedby-btn" data-by="member" id="addedByMemberBtn">Team Member</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="topicCancel">Cancel</button>
+        <button class="btn-save" id="topicSave">Save Topic</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority / Blocker Modal -->
+  <div class="modal-overlay" id="priorityModal">
+    <div class="modal">
+      <h2 id="priorityModalTitle">Add Priority</h2>
+      <div class="modal-body">
+        <label>Type</label>
+        <div class="type-toggle">
+          <button class="priority-type-btn active" data-type="priority">🎯 Priority</button>
+          <button class="priority-type-btn" data-type="blocker">⛔ Blocker</button>
+        </div>
+        <label>Title</label>
+        <input type="text" id="priorityText" placeholder="What's the priority or blocker?" maxlength="150" />
+        <label>Description <span class="optional">(optional)</span></label>
+        <textarea id="priorityDescription" placeholder="Any context or detail..." rows="3" maxlength="400"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="priorityCancel">Cancel</button>
+        <button class="btn-save" id="prioritySave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BHAG Modal -->
+  <div class="modal-overlay" id="bhagModal">
+    <div class="modal">
+      <h2 id="bhagModalTitle">Add BHAG</h2>
+      <div class="modal-body">
+        <label>Goal</label>
+        <input type="text" id="bhagTitle" placeholder="What's the big goal?" maxlength="150" />
+        <label>Description <span class="optional">(optional)</span></label>
+        <textarea id="bhagDescription" placeholder="Why does this matter? What does success look like?" rows="3" maxlength="300"></textarea>
+        <label>Pick an Emoji</label>
+        <div class="emoji-picker" id="emojiPicker"></div>
+        <input type="hidden" id="bhagEmoji" value="🎯" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="bhagCancel">Cancel</button>
+        <button class="btn-save" id="bhagSave">Save BHAG</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
