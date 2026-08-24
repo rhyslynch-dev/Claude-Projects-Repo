@@ -126,6 +126,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── HiBob Leave API ───────────────────────────────────────────────────────────
 
+// Node 19+ enables HTTP keep-alive on the global agent by default. A pooled
+// socket to api.hibob.com can be left half-open when the host changes network
+// (laptop moving between office/VPN/home, or an Azure instance being moved),
+// after which every reused socket fails and the panel stays broken until the
+// process restarts. This endpoint is called at most a few times an hour, so
+// there is nothing to gain from pooling — use a fresh connection each time.
+const hibobAgent = new https.Agent({ keepAlive: false });
+
+const HIBOB_TIMEOUT_MS = 15000;
+
 function hibobRequest(urlStr) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlStr);
@@ -138,14 +148,22 @@ function hibobRequest(urlStr) {
         'Accept': 'application/json',
       },
       rejectUnauthorized: !HIBOB_INSECURE_TLS,
+      agent: hibobAgent,
+      timeout: HIBOB_TIMEOUT_MS,
     };
     const req = https.request(options, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HiBob returned HTTP ${res.statusCode}: ${body.slice(0, 200)}`));
+        }
         try { resolve(JSON.parse(body)); }
-        catch (e) { reject(e); }
+        catch (e) { reject(new Error(`HiBob returned non-JSON body: ${body.slice(0, 200)}`)); }
       });
+    });
+    req.on('timeout', () => {
+      req.destroy(new Error(`HiBob request timed out after ${HIBOB_TIMEOUT_MS}ms`));
     });
     req.on('error', reject);
     req.end();
@@ -209,8 +227,8 @@ app.get('/api/leave', async (req, res) => {
 
     res.json({ thisWeek, thisMonth: upcoming, weekRange: week, monthRange: forecast });
   } catch (err) {
-    console.error('HiBob error:', err);
-    res.status(500).json({ error: 'Failed to fetch leave data' });
+    console.error('HiBob error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch leave data', detail: err.message });
   }
 });
 
