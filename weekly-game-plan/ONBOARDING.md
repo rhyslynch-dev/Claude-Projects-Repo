@@ -257,9 +257,13 @@ Ordered roughly by how likely they are to cost you time.
    every card and post kudos as any member.
 4. **The member list is code, not configuration.** Team changes require a
    commit and redeploy.
-5. **`HIBOB_INSECURE_TLS` exists and must stay unset.** It disables TLS
-   certificate validation and was a workaround for HTTPS interception on an
-   office network. Verified unnecessary — see `DEPLOY.md` section 3.
+5. **`HIBOB_INSECURE_TLS` must stay unset in Azure, but is often needed
+   locally.** Some Bulk office networks intercept HTTPS with a self-signed
+   root, which fails the HiBob call with `self-signed certificate in
+   certificate chain`. It is intermittent and varies by network, so a
+   developer may need it on one day and not the next. If a certificate error
+   ever appears from Azure, trust the corporate CA via `NODE_EXTRA_CA_CERTS`
+   rather than disabling validation. See `DEPLOY.md` section 3.
 6. **`data/weeks.json` is gitignored**, so a fresh deploy starts with an
    empty board. This is expected and accepted by the owner; no migration is
    needed.

@@ -87,18 +87,25 @@ correct credentials.
 
 ### `HIBOB_INSECURE_TLS`
 
-**Leave unset.** Setting it to `true` disables TLS certificate validation on
-outbound HiBob calls.
+**Leave unset in Azure.** Setting it to `true` disables TLS certificate
+validation on outbound HiBob calls.
 
-It exists only as an escape hatch: the HiBob request previously failed with
-`SELF_SIGNED_CERT_IN_CHAIN` on a Bulk network that intercepted HTTPS with a
-self-signed root certificate. That interception no longer appears to be in
-effect — the call has been verified working with validation fully enabled —
-so the flag should not be needed anywhere, including locally. It is retained
-in case the proxy behaviour returns on some office networks.
+It is required on **some** Bulk office networks, which intercept HTTPS with a
+self-signed root certificate. When that interception is active the HiBob call
+fails with `self-signed certificate in certificate chain`. The behaviour is
+intermittent and appears to vary by network: the same machine has been
+observed succeeding with validation enabled and, hours later on a different
+network, failing. Developers may therefore need this flag locally even though
+it should never be set in Azure.
 
-If HiBob calls ever fail with a certificate error in Azure, that indicates a
-genuine trust problem worth investigating rather than bypassing.
+Azure App Service is not behind that proxy, so the flag should not be needed
+there.
+
+If HiBob calls **do** fail with a certificate error from Azure, the correct
+fix is to trust the intercepting certificate authority rather than disable
+validation — supply the corporate root via `NODE_EXTRA_CA_CERTS`, which keeps
+verification intact. Disabling validation on a hosted service exposes the
+HiBob credentials to interception and should be a last resort.
 
 ---
 
