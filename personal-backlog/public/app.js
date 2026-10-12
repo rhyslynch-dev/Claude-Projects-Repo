@@ -184,14 +184,16 @@ function buildTaskRow(task) {
     <div class="task-meta">
       ${due ? `<div class="task-due ${due.cls}">${due.label}</div>` : ''}
       <span class="priority-badge ${task.priority}">${task.priority}</span>
+      <button class="task-duplicate" data-id="${task.id}" title="Duplicate task">⧉</button>
       <button class="task-delete" data-id="${task.id}">×</button>
     </div>
   `;
 
   row.querySelector('.task-check').addEventListener('click', (e) => { e.stopPropagation(); toggleTask(task.id); });
+  row.querySelector('.task-duplicate').addEventListener('click', (e) => { e.stopPropagation(); duplicateTask(task.id); });
   row.querySelector('.task-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteTask(task.id); });
   row.addEventListener('click', (e) => {
-    if (!e.target.closest('.task-check') && !e.target.closest('.task-delete')) {
+    if (!e.target.closest('.task-check') && !e.target.closest('.task-duplicate') && !e.target.closest('.task-delete')) {
       openEditTask(task.id);
     }
   });
@@ -302,6 +304,34 @@ async function deleteTask(id) {
   await api('DELETE', `/api/tasks/${id}`);
   tasks = tasks.filter(t => t.id !== id);
   renderBoard();
+}
+
+async function duplicateTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  // The copy lands in the same section as the original so it appears next to
+  // it. resolveSection is deliberately not used here: it would send an undated
+  // task to Backlog, moving the copy away from the task it was duplicated from.
+  // A completed task duplicates into Today — the point of duplicating one is
+  // to do it again.
+  const copy = await api('POST', '/api/tasks', {
+    name: task.name,
+    section: task.section === 'completed' ? 'today' : task.section,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    notes: task.notes,
+  });
+  tasks.push(copy);
+  renderBoard();
+  flashTask(copy.id);
+}
+
+// Briefly highlight a row so a new copy is obvious among near-identical tasks.
+function flashTask(id) {
+  const row = document.querySelector(`.task-row[data-id="${id}"]`);
+  if (!row) return;
+  row.classList.add('task-flash');
+  setTimeout(() => row.classList.remove('task-flash'), 1200);
 }
 
 function openEditTask(id) {

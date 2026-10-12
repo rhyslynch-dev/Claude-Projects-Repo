@@ -213,6 +213,21 @@ main { flex: 1; padding: 24px 20px; }
 .task-row:hover .task-delete { opacity: 1; }
 .task-delete:hover { background: rgba(228,40,40,0.1); }
 
+.task-duplicate {
+  opacity: 0; background: transparent; color: var(--text-muted);
+  font-size: 15px; padding: 2px 6px; border-radius: 4px;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.task-row:hover .task-duplicate { opacity: 1; }
+.task-duplicate:hover { background: rgba(14,70,174,0.15); color: #6b9eff; }
+
+/* Highlight a freshly created duplicate so it is distinguishable */
+.task-flash { animation: taskFlash 1.2s ease-out; }
+@keyframes taskFlash {
+  0%   { background: rgba(14,70,174,0.45); }
+  100% { background: transparent; }
+}
+
 .task-check { border-color: #0E46AE; }
 .task-check:hover { border-color: var(--green); }
 
