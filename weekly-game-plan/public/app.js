@@ -9,7 +9,11 @@ function toggleCollapse(id) {
 
 const socket = io();
 
+// `members` is every member ever, including retired ones — needed so history
+// and kudos can still resolve a departed colleague's name. `activeMembers` is
+// the current team and drives the board and the kudos pickers.
 let members = [];
+let activeMembers = [];
 let currentWeekKey = null;
 let currentWeek = null;
 
@@ -39,7 +43,7 @@ function getMember(id) {
 function buildBoard(week) {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  for (const m of members) {
+  for (const m of activeMembers) {
     const mData = week.members[m.id] || {};
     board.appendChild(buildCard(m, mData, week.kudos || []));
   }
@@ -271,8 +275,8 @@ function openKudosModal(preselectedTo = null) {
   const toSel = document.getElementById('kudosTo');
   const msg = document.getElementById('kudosMessage');
 
-  fromSel.innerHTML = `<option value="" disabled selected>Who's giving kudos?</option>` + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  toSel.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  fromSel.innerHTML = `<option value="" disabled selected>Who's giving kudos?</option>` + activeMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  toSel.innerHTML = activeMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 
   if (preselectedTo) toSel.value = preselectedTo;
   msg.value = '';
@@ -531,9 +535,14 @@ document.getElementById('leaveRefresh').addEventListener('click', () => {
 async function init() {
   const res = await fetch('/api/members');
   members = await res.json();
-  for (let i = members.length - 1; i > 0; i--) {
+
+  // Shuffle the running order so the same person does not always go first.
+  // Only the active team is shuffled; `members` keeps a stable order so the
+  // history view stays consistent between refreshes.
+  activeMembers = members.filter(m => m.active !== false);
+  for (let i = activeMembers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [members[i], members[j]] = [members[j], members[i]];
+    [activeMembers[i], activeMembers[j]] = [activeMembers[j], activeMembers[i]];
   }
 
   currentWeekKey = getWeekKey();

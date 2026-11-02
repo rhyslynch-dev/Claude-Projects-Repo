@@ -43,15 +43,23 @@ const io = new Server(server);
 const DATA_FILE = path.join(__dirname, 'data', 'weeks.json');
 const PORT = process.env.PORT || 3000;
 
+// Set `active: false` to retire someone rather than deleting their entry.
+// Retired members drop off the board and get no new week records, but stay
+// available so the history view and kudos can still resolve their name —
+// deleting the entry outright would blank their past goals and render kudos
+// with the raw id instead of the person's name.
 const MEMBERS = [
-  { id: 'rhys',   name: 'Rhys Lynch',     initials: 'RL', color: '#4F86C6', photo: '/images/Rhys.png'   },
-  { id: 'nate',   name: 'Nathaniel Smithen',   initials: 'NS', color: '#E07BB5', photo: '/images/Nate.png'   },
-  { id: 'david',  name: 'David Rossiter', initials: 'DR', color: '#9B59B6', photo: '/images/David.png'  },
-  { id: 'rowena', name: 'Rowena Ramsay',  initials: 'RR', color: '#E67E22', photo: '/images/Row.png'    },
-  { id: 'arslan', name: 'Arslan Nasir',   initials: 'AN', color: '#27AE60', photo: '/images/Arslan.jpg' },
-  { id: 'megan',  name: 'Megan Wharton', initials: 'MW', color: '#E74C3C', photo: '/images/Megan.jpg'  },
-  { id: 'sumit',  name: 'Sumit Ingle',   initials: 'SI', color: '#1ABC9C', photo: '/images/Sumit-Ingle.jpg' },
+  { id: 'rhys',     name: 'Rhys Lynch',        initials: 'RL', color: '#4F86C6', photo: '/images/Rhys.png'   },
+  { id: 'nate',     name: 'Nathaniel Smithen', initials: 'NS', color: '#E07BB5', photo: '/images/Nate.png'   },
+  { id: 'david',    name: 'David Rossiter',    initials: 'DR', color: '#9B59B6', photo: '/images/David.png'  },
+  { id: 'rowena',   name: 'Rowena Ramsay',     initials: 'RR', color: '#E67E22', photo: '/images/Row.png',    active: false },
+  { id: 'arslan',   name: 'Arslan Nasir',      initials: 'AN', color: '#27AE60', photo: '/images/Arslan.jpg' },
+  { id: 'megan',    name: 'Megan Wharton',     initials: 'MW', color: '#E74C3C', photo: '/images/Megan.jpg'  },
+  { id: 'sumit',    name: 'Sumit Ingle',       initials: 'SI', color: '#1ABC9C', photo: '/images/Sumit-Ingle.jpg' },
+  { id: 'angeline', name: 'Angeline Raja',     initials: 'AR', color: '#F39C12', photo: '/images/Angeline-Raja.png' },
 ];
+
+const ACTIVE_MEMBERS = MEMBERS.filter(m => m.active !== false);
 
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) return { weeks: {} };
@@ -76,7 +84,7 @@ function getWeekKey(date = new Date()) {
 
 function createWeek(weekKey, prevWeekKey, allData) {
   const members = {};
-  for (const m of MEMBERS) {
+  for (const m of ACTIVE_MEMBERS) {
     const prevGoal = prevWeekKey && allData.weeks[prevWeekKey]
       ? allData.weeks[prevWeekKey].members[m.id]?.goal || ''
       : '';
@@ -107,7 +115,7 @@ function getOrCreateWeek(weekKey) {
   const week = data.weeks[weekKey];
   const prevKey = keys.filter(k => k < weekKey).pop() || null;
   let added = false;
-  for (const m of MEMBERS) {
+  for (const m of ACTIVE_MEMBERS) {
     if (!week.members[m.id]) {
       week.members[m.id] = {
         goal: '',
@@ -302,7 +310,7 @@ io.on('connection', (socket) => {
 
     // Always create a fresh week — clear all fields, carry last week's goals
     const members = {};
-    for (const m of MEMBERS) {
+    for (const m of ACTIVE_MEMBERS) {
       const lastGoal = prevWeek ? (prevWeek.members[m.id]?.goal || '') : '';
       members[m.id] = {
         goal: '',
